@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ChevronsUp } from "lucide-react";
 import "./welcome.css";
 
 type Props = { departing: boolean; enter: () => void; skip: () => void; prepare: () => void };
@@ -7,6 +7,62 @@ export const WELCOME_ENTRY_MS = 2000;
 
 export default function Welcome({ departing, enter, skip, prepare }: Props) {
   const panel = useRef<HTMLElement>(null);
+  const entering = useRef(false);
+  const startEntry = () => {
+    if (departing || entering.current) return;
+    entering.current = true;
+    prepare();
+    enter();
+  };
+  // Native listeners keep touch scrolling available for credits on small
+  // screens, while preventing the entry gesture from reaching the map below.
+  const latest = useRef({ startEntry, prepare });
+  latest.current = { startEntry, prepare };
+  useEffect(() => {
+    const node = panel.current;
+    if (!node) return;
+    let distance = 0, lastWheel = 0, touchY: number | null = null;
+    let reset: ReturnType<typeof setTimeout>;
+    const progress = (value: number) => node.style.setProperty("--entry-progress", String(value));
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || entering.current || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      if (event.deltaY >= 0) { distance = 0; progress(0); return; }
+      event.preventDefault();
+      const now = performance.now();
+      if (now - lastWheel > 450) distance = 0;
+      lastWheel = now;
+      const pixels = -event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1);
+      distance += Math.min(pixels, 160);
+      latest.current.prepare();
+      progress(Math.min(distance / 120, 1));
+      clearTimeout(reset);
+      reset = setTimeout(() => { distance = 0; progress(0); }, 450);
+      if (distance >= 120) latest.current.startEntry();
+    };
+    const touchStart = (event: TouchEvent) => {
+      touchY = event.touches.length === 1 ? event.touches[0].clientY : null;
+    };
+    const touchEnd = (event: TouchEvent) => {
+      if (touchY === null || !event.changedTouches.length) return;
+      const upward = touchY - event.changedTouches[0].clientY;
+      touchY = null;
+      // Read any overflowing welcome text before entering the application.
+      const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
+      if (upward >= 80 && atBottom) latest.current.startEntry();
+    };
+    const touchCancel = () => { touchY = null; };
+    node.addEventListener("wheel", wheel, { passive: false });
+    node.addEventListener("touchstart", touchStart, { passive: true });
+    node.addEventListener("touchend", touchEnd, { passive: true });
+    node.addEventListener("touchcancel", touchCancel);
+    return () => {
+      clearTimeout(reset);
+      node.removeEventListener("wheel", wheel);
+      node.removeEventListener("touchstart", touchStart);
+      node.removeEventListener("touchend", touchEnd);
+      node.removeEventListener("touchcancel", touchCancel);
+    };
+  }, []);
   useEffect(() => {
     const node = panel.current;
     if (!node) return;
@@ -27,10 +83,14 @@ export default function Welcome({ departing, enter, skip, prepare }: Props) {
     node.focus({ preventScroll: true });
     return () => { observer.disconnect(); previous.forEach((inert, child) => { child.inert = inert; }); };
   }, []);
-  return <section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title"
+  return <section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
     aria-busy={departing} style={{"--entry-duration": `${WELCOME_ENTRY_MS}ms`} as React.CSSProperties}
     className={`mission-welcome mission-welcome--ambient${departing ? " mission-welcome--departing" : ""}`}
     onKeyDown={event => {
+      if (departing || entering.current) return;
+      if (["ArrowUp", "PageUp"].includes(event.key)) {
+        event.preventDefault(); event.stopPropagation(); startEntry(); return;
+      }
       if (event.key === "Escape") { event.stopPropagation(); skip(); }
       if (event.key !== "Tab") return;
       const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled),a[href]")];
@@ -59,9 +119,11 @@ export default function Welcome({ departing, enter, skip, prepare }: Props) {
       <h1 id="welcome-title" aria-label="AMAZE-X"><span className="mission-welcome__wordmark">AMAZE</span><span data-node-id="23:120" className="mission-welcome__x" aria-hidden="true"><img src="/assets/welcome/x-glass.svg" alt="" width="49" height="53" /></span></h1>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
-      <div className="mission-welcome__actions">
-        <button className="mission-welcome__enter" onPointerEnter={prepare} onFocus={prepare} onPointerDown={prepare} onClick={enter} disabled={departing}>Enter the Solar System <ArrowUpRight size={20} aria-hidden="true" /></button>
-        <button className="mission-welcome__skip" onClick={skip} disabled={departing}>Skip introduction</button>
+      <div className="mission-welcome__scroll-hint" id="welcome-scroll-hint">
+        <ChevronsUp size={24} aria-hidden="true" />
+        <span className="mission-welcome__scroll-desktop">Scroll up to explore</span>
+        <span className="mission-welcome__scroll-touch">Swipe up to explore</span>
+        <span className="mission-welcome__scroll-key">or press ↑ / Page Up</span>
       </div>
       </div>
     </div>

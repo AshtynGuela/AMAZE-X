@@ -22,7 +22,7 @@ await page.goto("http://127.0.0.1:5175");
 await expect(
   page.getByRole("heading", { name: "AMAZE-X", exact: true }),
 ).toBeVisible();
-await page.getByRole("button", { name: "Skip introduction" }).click();
+await page.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
 await page.locator("button[aria-label=Moon]").click();
 const data = await (await response).json();
 if (

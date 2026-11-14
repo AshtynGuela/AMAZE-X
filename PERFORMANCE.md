@@ -1,6 +1,6 @@
 # Loading optimization — 14 November 2026
 
-The production welcome screen now defers the 3D scene, planet meshes, orbit packets and Rocky until entry. Hovering or focusing Enter prepares the scene code, while the existing two-second transition overlaps scene startup. Only the current space backdrop loads. Scientific sampling, terrain resolution and source data are unchanged.
+The production welcome screen now defers the 3D scene, planet meshes, orbit packets and Rocky until entry. An upward scroll prepares the scene code, while the two-second entry transition overlaps scene startup. Only the current space backdrop loads. Scientific sampling, terrain resolution and source data are unchanged.
 
 ## Local measurement
 
@@ -9,7 +9,7 @@ The production welcome screen now defers the 3D scene, planet meshes, orbit pack
 | Before | 39 | 6,770,217 |
 | After | 13 | 1,136,348 |
 
-Decoded startup resource volume fell approximately 83%. These are local browser Resource Timing captures before pressing Enter, excluding the HTML document. Repeated health polls are counted once. The baseline used a warm browser cache, so transfer bytes and localhost timing are not a fair before/after network-speed benchmark. Raw captures are in `.cache/perf-review/` and are intentionally untracked.
+Decoded startup resource volume fell approximately 83%. These are local browser Resource Timing captures before the entry gesture, excluding the HTML document. Repeated health polls are counted once. The baseline used a warm browser cache, so transfer bytes and localhost timing are not a fair before/after network-speed benchmark. Raw captures are in `.cache/perf-review/` and are intentionally untracked.
 
 ## Delivery and runtime changes
 

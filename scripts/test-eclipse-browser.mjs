@@ -42,7 +42,7 @@ try {
     "http://127.0.0.1:5175/?session=" +
       encodeURIComponent(encodeSession(state)),
   );
-  await page.getByRole("button", { name: "Skip introduction" }).click();
+  await page.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   await expect(page.locator(".eclipse-status")).toContainText("total", {
     timeout: 150000,
   });
@@ -195,7 +195,7 @@ try {
     "http://127.0.0.1:5175/?session=" +
       encodeURIComponent(encodeSession(state)),
   );
-  await mobile.getByRole("button", { name: "Skip introduction" }).click();
+  await mobile.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   await expect(mobile.locator(".eclipse-status")).toContainText("total", {
     timeout: 150000,
   });

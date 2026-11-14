@@ -17,7 +17,7 @@ try {
   // workflow independent of the full original mesh's software-rendering cost.
   await page.route('**/assets/rocky-web.glb',route=>route.abort());
   await page.goto('http://127.0.0.1:5175/?session='+encodeURIComponent(encodeSession(state)));
-  await page.getByRole('button',{name:'Skip introduction'}).click();
+  await page.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   await page.getByRole('button',{name:'Plan landing',exact:true}).click();
   const duration=page.getByRole('spinbutton',{name:/Surface duration/});
   // Manual mission duration is available without expanding advanced settings.

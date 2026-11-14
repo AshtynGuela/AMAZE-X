@@ -16,7 +16,7 @@ try {
   });
   await page.goto(process.env.LUSEE_TEST_URL || 'http://127.0.0.1:5175/');
   await page.bringToFront();
-  await page.getByRole('button',{name:'Skip introduction'}).click();
+  await page.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   const rocky=page.locator('.rocky-fab');
   await expect.poll(()=>page.evaluate(()=>window.rockySpeechSeen[0]),{timeout:120000})
     .toBe('Left or Right Click Me for Features! I help you. Statement.');

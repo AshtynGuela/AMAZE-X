@@ -13,7 +13,7 @@ page.on('pageerror',e=>errors.push(e.message));
 const state={scenarios:[],custom:[],mastM:2,minAntennaEl:5,time:Date.parse('2025-03-14T07:00:00Z'),selected:'apollo11',view:'globe',mode:'plain'};
 try {
   await page.goto('http://127.0.0.1:5175/?session='+encodeURIComponent(encodeSession(state)));
-  await page.getByRole('button',{name:'Skip introduction'}).click();
+  await page.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   await expect(page.locator('.condition-readings')).toContainText('Sunlight now',{timeout:150000});
   await expect(page.locator('.sunlight-reading')).toContainText("Earth's shadow");
   await page.screenshot({path:shots+'/dashboard-desktop.png'});

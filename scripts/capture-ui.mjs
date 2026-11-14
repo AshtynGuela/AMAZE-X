@@ -25,7 +25,7 @@ await desktop.screenshot({
   path: ".impeccable/review/welcome.png",
   fullPage: true,
 });
-await desktop.getByRole("button", { name: "Skip introduction" }).click();
+await desktop.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
 await desktop.getByRole("button", { name: "Moon", exact: true }).click();
 await expect(desktop.locator(".body-readings")).toBeVisible({
   timeout: 150000,
@@ -131,7 +131,7 @@ await desktop.screenshot({
 // Reload restores the real performance clock before the settled surface check.
 await desktop.reload();
 await desktop.emulateMedia({ reducedMotion: "reduce" });
-await desktop.getByRole("button", { name: "Skip introduction" }).click();
+await desktop.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
 await desktop.locator(".body-readings").waitFor({ timeout: 150000 });
 await desktop
   .getByRole("button", { name: "Plan landing", exact: true })
@@ -159,7 +159,7 @@ const mobile = await browser.newPage({
 });
 mobile.on("pageerror", (e) => errors.push(e.message));
 await mobile.goto("http://127.0.0.1:5175");
-await mobile.getByRole("button", { name: "Skip introduction" }).click();
+await mobile.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
 await mobile.getByRole("button", { name: "Moon", exact: true }).click();
 await expect(mobile.locator(".body-readings")).toBeVisible({ timeout: 150000 });
 await mobile.getByRole("button", { name: "Close tools" }).click();

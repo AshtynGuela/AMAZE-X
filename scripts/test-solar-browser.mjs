@@ -15,15 +15,10 @@ try {
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:5175/");
-  await expect(page.locator(".solar-info summary")).toContainText(
-    "8/8 loaded",
-    { timeout: 180000 },
-  );
-  await page.waitForTimeout(1200);
+  await expect(page.getByText("Scroll up to explore", { exact: true })).toBeVisible();
   await page.screenshot({ path: dir + "/welcome.png", fullPage: true });
-  await page
-    .getByRole("button", { name: "Enter the Solar System", exact: true })
-    .click();
+  await page.mouse.wheel(0, -160);
+  await expect(page.locator(".solar-info summary")).toContainText("8/8 loaded", { timeout: 180000 });
   await expect(page.locator(".solar-world")).toBeVisible();
   await expect(page.locator(".inspector")).toHaveCount(0);
   await expect(page.locator(".sun-label")).toBeVisible();
@@ -65,7 +60,7 @@ try {
   });
   mobile.on("pageerror", (e) => errors.push(e.message));
   await mobile.goto("http://127.0.0.1:5175/");
-  await mobile.getByRole("button", { name: "Skip introduction" }).click();
+  await mobile.getByRole("dialog", { name: "AMAZE-X", exact: true }).press("Escape");
   await expect(mobile.locator(".solar-info summary")).toContainText(
     "8/8 loaded",
     { timeout: 180000 },
