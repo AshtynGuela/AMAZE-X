@@ -19,11 +19,13 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY server ./server
 COPY engine ./engine
-COPY scripts/lunar_terrain.py scripts/remote_dem.py scripts/surface_imagery.py scripts/surface_topography.py ./scripts/
+COPY scripts/*.py ./scripts/
 COPY public/data ./public/data
 COPY data/sites.json data/terrain-regional.json ./data/
 COPY data/terrain ./data/terrain
 ENV NODE_ENV=production HOST=0.0.0.0 LUNAR_TERRAIN_MODE=remote LUNAR_TERRAIN_PYTHON=/opt/venv/bin/python PYTHONUNBUFFERED=1
+RUN /opt/venv/bin/python -c "import sys; sys.path.insert(0, 'scripts'); import lunar_terrain, remote_dem, surface_imagery, surface_topography, terrain_patch, polar_imagery_tile" \
+    && node --input-type=module -e "await Promise.all(['terrain', 'terrain-tiles', 'polar-imagery'].map(name => import('./server/' + name + '.mjs')))"
 RUN mkdir -p .cache && chown -R node:node /app/.cache
 USER node
 EXPOSE 10000
