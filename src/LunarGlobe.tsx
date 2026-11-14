@@ -5,7 +5,7 @@ import {
   Ellipsoid, EllipsoidTerrainProvider, Entity, GeographicTilingScheme,
   HeadingPitchRange, HeightReference, JulianDate, KeyboardEventModifier,
   Math as CesiumMath, Matrix3, Quaternion as CesiumQuaternion, ScreenSpaceEventHandler, ScreenSpaceEventType, ShadowMode,
-  UrlTemplateImageryProvider, Viewer, sampleTerrain,
+  UrlTemplateImageryProvider, Viewer, sampleTerrain, Rectangle,
 } from "cesium";
 import { ArrowDown, ArrowUp, Compass, Globe2, Info, Minus, Mountain, Plus, Settings2, X } from "lucide-react";
 import { conditions } from "../engine/index.mjs";
@@ -16,6 +16,7 @@ import { captureMap } from "./mapSnapshot";
 import type { RankedSite } from "./NearbySites";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./lunar-map.css";
+import { withPolarTerrain } from "./polarTerrain";
 
 const moon = new Ellipsoid(LUNAR_RADIUS_M, LUNAR_RADIUS_M, LUNAR_RADIUS_M);
 const angle = CesiumMath.toRadians;
@@ -62,6 +63,7 @@ export default function LunarGlobe(props: Props) {
   const setFreeAxis = (value:boolean) => state.set({freeCameraAxis:value});
   const [retry, setRetry] = useState(0);
   const [surfacePending, setSurfacePending] = useState(false);
+  const [closeUp, setCloseUp] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [measurementHelp, setMeasurementHelp] = useState(false);
   const inertialView = state.lunarRotation;
@@ -148,10 +150,21 @@ export default function LunarGlobe(props: Props) {
       if (alive && event.level === 0) setError("Lunar imagery could not load. Retry the connection.");
     });
     v.imageryLayers.addImageryProvider(imagery);
+    for (const north of [true, false]) {
+      v.imageryLayers.addImageryProvider(new UrlTemplateImageryProvider({
+        url: "/api/polar-imagery/{z}/{x}/{y}.png",
+        tilingScheme: new GeographicTilingScheme({ ellipsoid: moon }),
+        rectangle: Rectangle.fromDegrees(-180, north ? 80 : -90, 180, north ? 90 : -80),
+        tileWidth: 256, tileHeight: 256, maximumLevel: 13,
+        credit: new Credit("NASA Moon Trek · LROC polar mosaics"),
+        hasAlphaChannel: true,
+      }));
+    }
     home();
 
-    CesiumTerrainProvider.fromUrl("/api/lunar-terrain-v2/", { ellipsoid: moon, requestVertexNormals: true }).then(provider => {
+    CesiumTerrainProvider.fromUrl("/api/lunar-terrain-v2/", { ellipsoid: moon, requestVertexNormals: true }).then(source => {
       if (!alive) return;
+      const provider = withPolarTerrain(source);
       terrain.current = provider;
       provider.errorEvent.addEventListener(event => {
         if (alive && event.level === 0) setError("Lunar terrain could not load. Retry the connection.");
@@ -333,14 +346,44 @@ export default function LunarGlobe(props: Props) {
       });
     };
     if (isGround && terrain.current) {
-      setSurfacePending(true);
+      const knownHeight = state.terrains[state.selected]?.elevationM ?? selected?.elevationM;
+      const earlyFlyover = state.view === "surface" && !closeUp && Number.isFinite(knownHeight);
+      // A numeric LOLA observer height can open a flyover immediately while
+      // the display tiles refine. A 2 m horizon still waits for rendered ground.
+      if (earlyFlyover) fly(knownHeight! + (closeUp ? 60 : 900), angle(closeUp ? -60 : -42));
+      setSurfacePending(!earlyFlyover);
       const carto = Cartographic.fromDegrees(destination.lon, destination.lat);
-      sampleTerrain(terrain.current, 16, [carto], true).then(([point]) => {
+      // Some regions have no finest-level tile. Descend only after obtaining
+      // real heights, trying progressively coarser coverage when necessary.
+      const provider = terrain.current;
+      const groundHeight = async () => {
+        if (Math.abs(destination.lat) >= 80) {
+          // Warm the small ancestor chain at this coordinate before a close
+          // descent, instead of showing a globe-scale triangle under the camera.
+          const samples = await Promise.allSettled([7, 8, 9, 10, 11, 12].map(level =>
+            sampleTerrain(provider, level, [Cartographic.clone(carto)], true)));
+          if (!active) throw new Error("Site changed");
+          for (const sample of samples.reverse()) {
+            if (sample.status === "fulfilled" && Number.isFinite(sample.value[0].height)) return sample.value[0];
+          }
+          throw new Error("Missing polar terrain elevation");
+        }
+        for (const level of (Math.abs(destination.lat) >= 80 ? [12, 10, 8] : [14, 12, 10, 8])) {
+          try {
+            const [point] = await sampleTerrain(provider, level, [Cartographic.clone(carto)], true);
+            if (Number.isFinite(point.height)) return point;
+          } catch { /* Try the next real terrain level. */ }
+          if (!active) throw new Error("Site changed");
+        }
+        throw new Error("Missing terrain elevation");
+      };
+      groundHeight().then(point => {
         if (!Number.isFinite(point.height)) throw new Error("Missing terrain elevation");
-        fly(point.height + (state.view === "horizon" ? Math.max(2, state.mastM) : 900), state.view === "horizon" ? angle(-3) : angle(-42));
+        if (!earlyFlyover) fly(point.height + (state.view === "horizon" ? Math.max(2, state.mastM) : closeUp ? 60 : 900), state.view === "horizon" ? angle(-3) : angle(closeUp ? -60 : -42));
       }).catch(() => {
         if (!active) return;
-        const height = selected?.elevationM;
+        if (earlyFlyover) return;
+        const height = state.terrains[state.selected]?.elevationM ?? selected?.elevationM;
         if (Number.isFinite(height)) fly(height! + (state.view === "horizon" ? Math.max(2, state.mastM) : 900), angle(-8));
         else setError("The surface height could not load. Retry before descending.");
       }).finally(() => { if (active) setSurfacePending(false); });
@@ -349,7 +392,15 @@ export default function LunarGlobe(props: Props) {
       fly(polar ? LUNAR_RADIUS_M * .9 : 140000, -Math.PI / 2);
     }
     return () => { active = false; };
-  }, [ready, state.view, state.selected, state.focusVersion, state.mastM]);
+  }, [ready, state.view, state.selected, state.focusVersion, state.mastM, closeUp, state.terrains[state.selected]?.elevationM]);
+
+  useEffect(() => {
+    const v = viewer.current;
+    if (!v) return;
+    const local = state.view === "surface" || state.view === "horizon";
+    v.scene.globe.maximumScreenSpaceError = local ? 1 : 3;
+    v.scene.requestRender();
+  }, [ready, state.view]);
 
   useEffect(() => {
     const v = viewer.current;
@@ -505,6 +556,7 @@ export default function LunarGlobe(props: Props) {
     {(state.view === "surface" || state.view === "horizon") && <div className="lunar-view-mode">
       <span>{state.view === "surface" ? "Terrain flyover" : "Observer horizon"}</span>
       <button type="button" onClick={() => { const s=useScout.getState();s.set({view:s.view === "surface" ? "horizon" : "surface",focusVersion:s.focusVersion+1}); }}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
+      {state.view === "surface" && <button type="button" aria-pressed={closeUp} onClick={() => setCloseUp(value => !value)}>{closeUp ? "Wide view" : "Close-up · 60 m"}</button>}
     </div>}
   </>;
 }

@@ -18,6 +18,7 @@ LAYERS = {
     "SP": ("SP", "LRO_WAC_Mosaic_SPole60_100mp", "png", 4),
     "NP": ("NP", "LRO_WAC_Mosaic_NPole60_100mp", "png", 4),
     "NAC": ("SP", "LRO_NAC_AvgMosaic_SPole855_1mp", "png", 11),
+    "NNAC": ("NP", "LRO_NAC_AvgMosaic_NPole855_1mp", "png", 11),
     "IM1": ("SP", "LRO_LOLA_NAC_ColorHillshade_3_5mpp_IM_1_LandingSite_SP", "png", 10),
     "IM1_NAC": ("SP", "LRO_NAC_Post_Landing_OrthoMosaic_1mpp_IM_1_LandingSite_SP", "png", 12),
     "PSR": ("SP", "NAC_POLE_PSR_SOUTH_STRETCH", "png", 8),
@@ -27,11 +28,12 @@ LAYERS = {
 
 def map_pixels(projection, latitude, longitude, level, cols, rows):
     """WMTS pixel centres, in the projection of the source mosaic."""
-    if projection == "EQ":
+    region = LAYERS[projection][0]
+    if region == "EQ":
         x = ((longitude + 180) % 360) * (cols * 256 / 360)
         y = (90 - latitude) * (rows * 256 / 180)
         return (x - .5) % (cols * 256), np.clip(y - .5, 0, rows * 256 - 1)
-    south = projection != "NP"
+    south = region != "NP"
     distance = 2 * RADIUS * np.tan(np.radians(90 + (latitude if south else -latitude)) / 2)
     lon = np.radians(longitude)
     resolution = 30578404.0178571 * .00028 / (2 ** level)
@@ -84,7 +86,7 @@ def sample(projection, latitude, longitude, folder, level=None):
     cols, rows = (2 << level, 1 << level)
     x, y = map_pixels(projection, latitude, longitude, level, cols, rows)
     x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
-    x1 = (x0 + 1) % (cols * 256) if projection == "EQ" else x0 + 1
+    x1 = (x0 + 1) % (cols * 256) if LAYERS[projection][0] == "EQ" else x0 + 1
     y1 = np.minimum(y0 + 1, rows * 256 - 1)
     ux, uy = x - x0, y - y0
     corners = [(x0, y0, (1-ux)*(1-uy)), (x1, y0, ux*(1-uy)),
@@ -119,6 +121,8 @@ def texture(lat, lon, width, folder):
     details = []
     if lat <= -85.5:
         details = [("NAC", 11 if width <= 1280 else 9, .92), ("PSR", 8, .85)]
+    elif lat >= 85.5:
+        details = [("NNAC", 11 if width <= 1280 else 9, .92)]
     elif -80.46 <= lat <= -79.8 and .9 <= lon <= 1.95:
         details = [("IM1", 10 if width <= 1280 else 9, .85), ("IM1_NAC", 12 if width <= 1280 else 9, .78)]
     elif abs(lat) < 59.9:

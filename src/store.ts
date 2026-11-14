@@ -47,6 +47,7 @@ export type Terrain = {
   siteId: string;
   elevationM: number;
   resolutionM: number;
+  quality?: "quick" | "full";
   masks: Record<string, number[]>;
   obstructions?: Record<string, { distanceM: number[]; elevationM: number[] }>;
   azStepDeg?: number;
@@ -56,6 +57,17 @@ export type Terrain = {
   tile: { size: number; widthM: number; heightsM: number[] };
 };
 const terrainRequests = new Map<string, Promise<Terrain | null>>();
+const terrainRefinements = new Map<string, Promise<void>>();
+
+async function readTerrain(url: string) {
+  const deadline = Date.now() + 720000;
+  do {
+    const terrain = await jsonFetch(url);
+    if (!terrain.pending) return terrain as Terrain;
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  } while (Date.now() < deadline);
+  throw new Error("NASA terrain is still being prepared. Retry in a moment.");
+}
 
 export function ensureTerrain(site: Site, force = false) {
   const cached = useScout.getState().terrains[site.id];
@@ -65,20 +77,18 @@ export function ensureTerrain(site: Site, force = false) {
   const url = site.family === "custom"
     ? "/api/terrain?" + new URLSearchParams({ lat: String(site.lat), lon: String(site.lon) })
     : "/api/terrain/" + encodeURIComponent(site.id);
-  const request = (async () => {
-    const deadline = Date.now() + 720000;
-    let terrain, first = true;
-    do {
-      terrain = await jsonFetch(url + (force && first && site.family === 'custom' ? '&retry=1' : ''));
-      first = false;
-      if (!terrain.pending) return terrain as Terrain;
-      await new Promise(resolve=>setTimeout(resolve,1500));
-    } while(Date.now() < deadline);
-    throw new Error('NASA terrain is still being prepared. Retry in a moment.');
-  })().then((terrain: Terrain) => {
+  const custom = site.family === "custom";
+  const request = readTerrain(url + (custom ? "&quality=quick" + (force ? "&retry=1" : "") : "")).then((terrain: Terrain) => {
     useScout.setState(s => ({
       terrains: { ...s.terrains, [site.id]: { ...terrain, siteId: site.id } },
     }));
+    if (custom && !terrainRefinements.has(site.id)) {
+      const refinement = readTerrain(url + "&quality=full" + (force ? "&retry=1" : "")).then(full => {
+        useScout.setState(s => ({ terrains: { ...s.terrains, [site.id]: { ...full, siteId: site.id } } }));
+      }).catch(() => { /* Keep the explicitly labelled quick result available. */ })
+        .finally(() => terrainRefinements.delete(site.id));
+      terrainRefinements.set(site.id, refinement);
+    }
     return terrain;
   }).catch(() => null).finally(() => terrainRequests.delete(site.id));
   terrainRequests.set(site.id, request);
@@ -290,6 +300,7 @@ export async function ensureData(
       mast: String(state.mastM),
       start: new Date(start).toISOString(),
       days: String(days),
+      terrainQuality: useScout.getState().terrains[site.id]?.quality ?? "full",
     });
     if (!site.terrainReady && !useScout.getState().terrains[site.id]) q.set("includeTerrain", "1");
     const { terrain: recovered, ...p } = await jsonFetch("/api/ephemeris?" + q);

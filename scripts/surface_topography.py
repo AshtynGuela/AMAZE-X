@@ -64,7 +64,11 @@ def surface_tile(lat, lon):
     heights = 1000 * ((1-v)*((1-u)*tl+u*tr) + v*((1-u)*bl+u*br))
     if np.any(~np.isfinite(heights) | (np.abs(heights) > 12000)):
         raise ValueError("Invalid SLDEM2015 elevations")
-    return {"size": SIZE, "widthM": WIDTH, "heightsM": heights.round(2).ravel().tolist()}
+    resolution = 2 * np.pi * 1737400 / (360 * PPD)
+    return {"size": SIZE, "widthM": WIDTH, "heightsM": heights.round(2).ravel().tolist(),
+            "resolutionM": resolution, "referenceRadiusM": 1737400,
+            "frame": "Mean Earth / Polar Axis", "sources": [{"product": "SLDEM2015_512",
+            "url": ARCHIVE, "mapScaleM": resolution}]}
 
 
 if __name__ == "__main__":

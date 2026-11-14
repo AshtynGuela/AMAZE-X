@@ -127,7 +127,7 @@ class RemoteGrid:
         self.shape = source["rows"], source["cols"]
         self.fetcher = fetcher
         self.total = self.shape[0] * self.shape[1] * 2
-        self.key = hashlib.sha256((source["url"] + source["sha256"] + source.get("httpEtag", "") + str(PAGE)).encode()).hexdigest()
+        self.key = hashlib.sha256((source["url"] + source.get("sha256", "") + source.get("httpEtag", "") + str(PAGE)).encode()).hexdigest()
         folder = Path(cache_dir) if cache_dir is not None else CACHE
         folder.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(folder / f"raster-blocks-{PAGE}.sqlite", timeout=30)
@@ -135,6 +135,34 @@ class RemoteGrid:
         self.db.execute("PRAGMA synchronous=NORMAL")
         self.db.execute("CREATE TABLE IF NOT EXISTS blocks (source TEXT, n INTEGER, data BLOB, used REAL, PRIMARY KEY(source,n))")
         self.db.execute("CREATE INDEX IF NOT EXISTS blocks_used ON blocks(used)")
+
+    def prefetch(self, pages):
+        """Keep all four connections busy across the entire sparse query.
+
+        Previously each 4 MB group waited for its slowest response before the
+        next group could start. Results go straight to disk, bounding RAM.
+        """
+        wanted = [int(n) for n in pages]
+        present = set()
+        for i in range(0, len(wanted), 400):
+            group = wanted[i:i+400]
+            sql = "SELECT n FROM blocks WHERE source=? AND n IN (" + ",".join("?" for _ in group) + ")"
+            present.update(n for (n,) in self.db.execute(sql, [self.key, *group]))
+        pending = {POOL.submit(self.fetcher, self.source, batch)
+                   for batch in batches(set(wanted) - present, self.total)}
+        try:
+            while pending:
+                done, pending = concurrent.futures.wait(pending, return_when=concurrent.futures.FIRST_COMPLETED)
+                for future in done:
+                    now = time.time()
+                    for (a, b), payload in future.result().items():
+                        self.db.executemany("INSERT OR REPLACE INTO blocks VALUES (?,?,?,?)",
+                            ((self.key, page, payload[page*PAGE-a:(page+1)*PAGE-a], now)
+                             for page in range(a // PAGE, b // PAGE + 1)))
+                    self.db.commit()
+        finally:
+            for future in pending:
+                future.cancel()
 
     def values(self, indices):
         indices = np.asarray(indices, dtype=np.int64)
@@ -145,6 +173,7 @@ class RemoteGrid:
         order = np.argsort(page_ids, kind="stable")
         ordered = page_ids[order]
         unique = np.unique(ordered)
+        self.prefetch(unique)
         result = np.empty(len(flat), dtype="<i2")
         per_batch = 4 * 1024 * 1024 // PAGE
         for base in range(0, len(unique), per_batch):
@@ -198,6 +227,28 @@ def regional_grid(source):
     target = folder / (source["product"] + ".f32")
     expected_size = source["rows"] * source["cols"] * 4
     if not target.is_file() or target.stat().st_size != expected_size:
+        # A small lossless regional extract can ship with the service, avoiding
+        # a 41 MB upstream transfer each time Render's ephemeral cache resets.
+        bundled = Path(__file__).resolve().parents[1] / "data/terrain" / (source["product"] + ".f32.gz")
+        if bundled.is_file():
+            import gzip
+            digest = hashlib.sha256()
+            working = target.with_suffix(".part")
+            try:
+                count = 0
+                with gzip.open(bundled, 'rb') as original, working.open('wb') as out:
+                    while chunk := original.read(1048576):
+                        count += len(chunk)
+                        if count > expected_size:
+                            raise ValueError("Bundled regional DEM exceeded its expected size")
+                        digest.update(chunk)
+                        out.write(chunk)
+                if count != expected_size or digest.hexdigest() != source['sha256']:
+                    raise ValueError("Bundled regional DEM checksum changed")
+                working.replace(target)
+            finally:
+                working.unlink(missing_ok=True)
+            return np.memmap(target, dtype="<f4", mode="r", shape=(source["rows"], source["cols"]))
         temporary = folder / (source["product"] + ".tif.part")
         try:
             length = source['byteLength']

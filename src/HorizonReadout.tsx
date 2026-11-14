@@ -77,11 +77,12 @@ export default function HorizonReadout({ site, bearing, imagery, terrainLighting
         {skyline === null ? "Local skyline unavailable" : <>Skyline {degrees(skyline)}{distance(bearing) && ` · terrain ${distance(bearing)} away`}</>}
         <span>{mast} m mast</span>
       </p>
+      {terrain?.quality === "quick" && <p className="data-note">Quick obstruction check · detailed skyline is loading.</p>}
       {(terrain || imagery === "quickmap" || imagery === "regional" || imagery === "regional-imagery") && <div className="horizon-imagery">
         <span role="status">{imagery === "quickmap" ? <a href="https://quickmap.lroc.im-ldi.com/" target="_blank" rel="noreferrer">QuickMap terrain · LROC imagery</a> : closeUp
           ? <a href={closeUp.sourceUrl} target="_blank" rel="noreferrer">{surfaceDetailCredit(closeUp, imagery === "detail")}</a>
-          : imagery === "regional-imagery" ? "Moon Trek imagery · SLDEM2015 terrain ~60 m"
-          : imagery === "regional" ? "SLDEM2015 terrain ~60 m"
+          : imagery === "regional-imagery" ? (Math.abs(site.lat) >= 80 ? "Moon Trek polar imagery · LOLA terrain" : "Moon Trek imagery · SLDEM2015 terrain ~60 m")
+          : imagery === "regional" ? (Math.abs(site.lat) >= 80 ? "LOLA polar terrain" : "SLDEM2015 terrain ~60 m")
           : imagery === "ready" ? `Moon Trek imagery · LOLA terrain ${terrain?.resolutionM} m`
           : imagery === "loading" ? "Loading Moon Trek imagery…" : "LOLA terrain"}</span>
         <button type="button" aria-pressed={!terrainLighting} onClick={toggleTerrainLighting}>Use mission lighting</button>

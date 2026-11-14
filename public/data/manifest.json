@@ -25,6 +25,20 @@
       "retrievedUtc": "2026-11-12T17:13:56Z",
       "httpEtag": "\"0cae2605ef6d21:0\"",
       "httpLastModified": "Thu, 06 Jul 2017 13:47:16 GMT"
+    },
+    {
+      "product": "ldem_80n_20m",
+      "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_80n_20m.img",
+      "labelUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_80n_20m.lbl",
+      "rows": 30400,
+      "cols": 30400,
+      "byteLength": 1848320000,
+      "scale": 0.5,
+      "mapScaleM": 20.0,
+      "httpEtag": "\"3f974e29f3d21:0\"",
+      "httpLastModified": "Wed, 31 Aug 2016 15:47:42 GMT",
+      "retrievedUtc": "2026-11-14",
+      "integrity": "HTTP range offsets, size and strong ETag; full-product checksum not computed"
     }
   ],
   "siteIds": [

@@ -1,6 +1,7 @@
 """Sample local PDS LOLA elevation grids for a coordinate and its skyline."""
 import json
 import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,20 @@ MASTS = (0, 2, 5, 10)
 DISTANCES = np.r_[np.arange(20, 2000, 20), np.arange(2000, 20000, 100),
                   np.arange(20000, 150001, 500)]
 BEARINGS = np.radians(np.arange(720) / 2)[:, None]
+
+
+def polar_pixels(latitude, longitude, shape, north=False):
+    sign = 1 if north else -1
+    rho = 2 * RADIUS * np.tan(np.pi / 4 - sign * np.radians(latitude) / 2)
+    x = shape[1] / 2 - .5 + rho * np.sin(np.radians(longitude)) / 20
+    y = shape[0] / 2 - .5 + sign * rho * np.cos(np.radians(longitude)) / 20
+    return x, y
+
+
+def skyline(ray_height, distances, height, mast):
+    theta = distances / RADIUS
+    return np.degrees(np.arctan2((RADIUS + ray_height) * np.cos(theta) - RADIUS - height - mast,
+                                (RADIUS + ray_height) * np.sin(theta)))
 
 
 def read_grid(source):
@@ -50,30 +65,31 @@ def forward(lat, lon, az, distance):
     return np.degrees(np.arctan2(z, np.hypot(x, y))), np.degrees(lam + np.arctan2(y, x)) % 360
 
 
-def terrain_at(lat, lon, source_records=None):
+def elevation_sampler(lat, source_records=None, detailed=True):
     if source_records is None:
         source_records = json.loads((ROOT / "public/data/manifest.json").read_text())["products"]
     products = {p["product"]: p for p in source_records}
     global_source = products["ldem_128"]
     global_dem = read_grid(global_source)
-    polar_source = products.get("ldem_80s_20m")
+    polar_name = "ldem_80n_20m" if lat >= 0 else "ldem_80s_20m"
+    polar_source = products.get(polar_name)
     regional_manifest = ROOT / "data/raw/lola-regional-site04.json"
     if not regional_manifest.is_file():
         regional_manifest = ROOT / "data/terrain-regional.json"
     regional = []
-    if lat <= -84 and regional_manifest.is_file():
+    if detailed and lat <= -84 and regional_manifest.is_file():
         for source in json.loads(regional_manifest.read_text()):
             file = ROOT / "data/raw" / (source["product"] + ".f32")
             shape = source["rows"], source["cols"]
             if file.is_file() and file.stat().st_size == shape[0] * shape[1] * 4:
-                regional.append((source, np.memmap(file, dtype="<f4", mode="r", shape=shape)))
+                regional.append([source, np.memmap(file, dtype="<f4", mode="r", shape=shape)])
                 products[source["product"]] = source
             elif os.environ.get("LUNAR_TERRAIN_MODE") != "local":
-                from remote_dem import regional_grid
-                regional.append((source, regional_grid(source)))
+                # Load only when an actual elevation query intersects coverage.
+                regional.append([source, None])
                 products[source["product"]] = source
     polar_dem = None
-    if polar_source and lat <= -80 + np.degrees(DISTANCES[-1] / RADIUS):
+    if detailed and polar_source and abs(lat) >= 80 - np.degrees(DISTANCES[-1] / RADIUS):
         try:
             polar_dem = read_grid(polar_source)
         except FileNotFoundError:
@@ -85,10 +101,8 @@ def terrain_at(lat, lon, source_records=None):
         values = np.empty(latitude.shape)
         polar = np.zeros(latitude.shape, dtype=bool)
         if polar_dem is not None:
-            rho = 2 * RADIUS * np.tan(np.pi / 4 + np.radians(latitude) / 2)
-            px = polar_dem.shape[1] / 2 - .5 + rho * np.sin(np.radians(longitude)) / 20
-            py = polar_dem.shape[0] / 2 - .5 - rho * np.cos(np.radians(longitude)) / 20
-            polar = ((latitude <= -80) & (px >= 0) & (px < polar_dem.shape[1] - 1)
+            px, py = polar_pixels(latitude, longitude, polar_dem.shape, north=lat >= 0)
+            polar = ((np.abs(latitude) >= 80) & (px >= 0) & (px < polar_dem.shape[1] - 1)
                      & (py >= 0) & (py < polar_dem.shape[0] - 1))
             if polar.any():
                 sample = bilinear(polar_dem, px[polar], py[polar]) * polar_source["scale"]
@@ -96,7 +110,7 @@ def terrain_at(lat, lon, source_records=None):
                 if np.any(sample < -12000):
                     polar[polar] = sample >= -12000
                 if polar.any():
-                    used.add("ldem_80s_20m")
+                    used.add(polar_name)
         if (~polar).any():
             x = (longitude[~polar] % 360) * global_dem.shape[1] / 360 - .5
             y = (90 - latitude[~polar]) * global_dem.shape[0] / 180 - .5
@@ -106,13 +120,18 @@ def terrain_at(lat, lon, source_records=None):
             rho = 2 * RADIUS * np.tan(np.pi / 4 + np.radians(latitude) / 2)
             east = rho * np.sin(np.radians(longitude))
             north = rho * np.cos(np.radians(longitude))
-            for source, grid in regional:
+            for entry in regional:
+                source, grid = entry
+                rows, cols = source["rows"], source["cols"]
                 step = source["mapScaleM"]
                 x = (east - source["westM"]) / step - .5
                 y = (source["northM"] - north) / step - .5
-                inside = (x >= 0) & (y >= 0) & (x < grid.shape[1]-1) & (y < grid.shape[0]-1)
+                inside = (x >= 0) & (y >= 0) & (x < cols-1) & (y < rows-1)
                 if not inside.any():
                     continue
+                if grid is None:
+                    from remote_dem import regional_grid
+                    grid = entry[1] = regional_grid(source)
                 sample = bilinear(grid, x[inside], y[inside])
                 finite = np.isfinite(sample) & (np.abs(sample) < 12000)
                 # Taper over 200 m to avoid introducing an artificial rim
@@ -127,18 +146,24 @@ def terrain_at(lat, lon, source_records=None):
                     used.add(source["product"])
         return values
 
+    return elevation, used, products
+
+
+def terrain_at(lat, lon, source_records=None, quality="full"):
+    started = time.monotonic()
+    elevation, used, products = elevation_sampler(lat, source_records)
     height = round(float(elevation(lat, lon)), 3)
     resolution = min(products[p]["mapScaleM"] for p in used)
     distances = np.r_[np.arange(5, 500, 5), DISTANCES] if resolution < 20 else DISTANCES
+    if quality == "quick":
+        distances = np.r_[np.arange(100, 2000, 100), np.arange(2000, 20000, 500), np.arange(20000, 150001, 2000)]
     distances = np.unique(distances)
-    ray_lat, ray_lon = forward(lat, lon, BEARINGS, distances[None, :])
+    bearings = np.radians(np.arange(180) * 2)[:, None] if quality == "quick" else BEARINGS
+    ray_lat, ray_lon = forward(lat, lon, bearings, distances[None, :])
     ray_height = elevation(ray_lat, ray_lon)
-    theta = distances / RADIUS
-    up = (RADIUS + ray_height) * np.cos(theta) - RADIUS - height
-    along = (RADIUS + ray_height) * np.sin(theta)
     masks, obstructions = {}, {}
     for mast in MASTS:
-        angles = np.degrees(np.arctan2(up - mast, along))
+        angles = skyline(ray_height, distances, height, mast)
         peak = angles.argmax(axis=1)
         ray = np.arange(len(peak))
         masks[str(mast)] = angles[ray, peak].round(5).tolist()
@@ -149,22 +174,25 @@ def terrain_at(lat, lon, source_records=None):
 
     # The surface mesh uses the same DEM and curved local coordinates.
     size, width = (257, 1280) if resolution < 20 else (257 if resolution == 20 else 129, 12000)
+    if quality == "quick":
+        size = 65
     axis = np.linspace(-width / 2, width / 2, size)
     east, north = np.meshgrid(axis, axis)
     tile = elevation(*forward(lat, lon, np.arctan2(east, north), np.hypot(east, north)))
     return {
         "lat": lat, "lon": lon, "elevationM": height, "resolutionM": resolution,
-        "azStepDeg": 0.5, "masks": masks, "obstructions": obstructions,
+        "azStepDeg": 2 if quality == "quick" else 0.5, "quality": quality, "masks": masks, "obstructions": obstructions,
         "sources": [p for name, p in products.items() if name in used],
         "maxDistanceM": int(distances[-1]),
-        "distanceStepsM": [5, 20, 100, 500] if resolution < 20 else [20, 100, 500],
+        "distanceStepsM": [100, 500, 2000] if quality == "quick" else [5, 20, 100, 500] if resolution < 20 else [20, 100, 500],
         "frame": "Mean Earth / Polar Axis",
-        "note": "Bilinear PDS LOLA heights with lunar curvature. Skyline samples use 0.5 degree bearings to 150 km.",
+        "calculationSeconds": round(time.monotonic() - started, 3),
+        "note": "Bilinear PDS LOLA heights with lunar curvature to 150 km. " + ("Preliminary 2 degree / sparse-distance screening; narrow ridges can be missed. Detailed evaluation follows." if quality == "quick" else "Detailed skyline sampled at 0.5 degree bearings."),
         "tile": {"size": size, "widthM": width, "heightsM": tile.round(2).ravel().tolist()},
     }
 
 
 if __name__ == "__main__":
     import sys
-    print(json.dumps(terrain_at(float(sys.argv[1]), float(sys.argv[2])),
+    print(json.dumps(terrain_at(float(sys.argv[1]), float(sys.argv[2]), quality=sys.argv[3] if len(sys.argv) > 3 else "full"),
                      separators=(",", ":"), allow_nan=False))

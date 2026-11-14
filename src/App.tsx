@@ -45,6 +45,7 @@ import {
   selectedScenario,
   allSites,
   ensureData,
+  ensureTerrain,
   getMask,
   jsonFetch,
   packetKey,
@@ -1098,15 +1099,16 @@ export default function App() {
                 : "Elevation pending"}
             </span>
           </div>
-          <div className={"quality " + (terrain ? "verified" : "limited")}>
+          <div className={"quality " + (terrain && terrain.quality !== "quick" ? "verified" : "limited")}>
             <span className="quality-dot" />
             {terrain
-              ? `LOLA terrain · ${terrain.resolutionM.toFixed(0)} m grid`
+              ? `${terrain.quality === "quick" ? "Quick terrain check · refining" : "LOLA terrain"} · ${terrain.resolutionM.toFixed(0)} m grid`
               : state.loading[key]
                 ? "Loading LOLA terrain"
                 : packet?.terrainPending
                   ? "Terrain not included"
                   : "Terrain pending"}
+            {terrain?.quality === "quick" && <button className="text-button" onClick={() => ensureTerrain(site, true)}>Refine terrain</button>}
             {!terrain && packet?.terrainPending && !state.loading[key] && (
               <button className="text-button" onClick={() => ensureData(
                 site, state.time, activeScenario?.durationDays || 1, true,
@@ -1825,7 +1827,7 @@ export default function App() {
                 <h3>Terrain</h3>
                 <p>
                   {terrain
-                    ? `The horizon uses a ${terrain.resolutionM.toFixed(0)} m LOLA elevation grid, 720 bearings out to 150 km, lunar curvature and a ${state.mastM} m mast.`
+                    ? `The ${terrain.quality === "quick" ? "preliminary" : "detailed"} horizon uses a ${terrain.resolutionM.toFixed(0)} m LOLA elevation grid, ${terrain.masks[String(state.mastM)]?.length ?? 720} bearings out to 150 km, lunar curvature and a ${state.mastM} m mast.`
                     : "The smooth horizon uses the Moon’s curvature and the observer’s height."}
                 </p>
                 <p>

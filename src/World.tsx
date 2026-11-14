@@ -14,6 +14,7 @@ import { lunarCameraDelta } from "../engine/lunar-scene.mjs";
 import { EarthGlobe, useEarthOrientation } from "./EarthGlobe";
 import { surfaceDetail, surfaceDetailCredit } from "./surfaceDetails";
 import type { RankedSite } from "./NearbySites";
+import "./lunar-map.css";
 const LunarGlobe = lazy(() => import("./LunarGlobe"));
 export const lunarPoint = (lat: number, lon: number, r = 3.5) =>
   new THREE.Vector3(
@@ -161,7 +162,19 @@ function MoonGlobe({
       <sphereGeometry args={[radius, displaced ? 384 : 192, displaced ? 192 : 96]} />
       <meshStandardMaterial
         map={texture}
-        onBeforeCompile={eclipseMaterial}
+        onBeforeCompile={shader => {
+          eclipseMaterial(shader);
+          // Longitude is undefined at either pole. All coincident pole
+          // vertices must sample the same height rather than form spikes.
+          shader.vertexShader = shader.vertexShader.replace("#include <displacementmap_vertex>", `
+            #ifdef USE_DISPLACEMENTMAP
+              float h = texture2D(displacementMap, vDisplacementMapUv).x;
+              float pole = texture2D(displacementMap, vec2(0.5, step(0.5, vDisplacementMapUv.y))).x;
+              float blend = smoothstep(1.0 - 1.0 / 720.0, 1.0, abs(vDisplacementMapUv.y * 2.0 - 1.0));
+              transformed += normalize(objectNormal) * (mix(h, pole, blend) * displacementScale + displacementBias);
+            #endif
+          `);
+        }}
         displacementMap={height ?? null}
         displacementScale={(radius * 24) / 1737.4}
         displacementBias={(-radius * 12) / 1737.4}
@@ -174,10 +187,11 @@ function MoonGlobe({
 }
 type SurfaceTile = { size: number; widthM: number; heightsM: number[] };
 
-function useRegionalTopography(site: Site, width: number | undefined, detailFolder: string | null) {
-  const covered = (width === 12000 || (!width && (detailFolder || site.family === "custom"))) && Math.abs(site.lat) < 59.8;
-  const url = !covered ? null : detailFolder ? detailFolder + "/surroundings-terrain.bin"
-    : "/api/surface-topography?" + new URLSearchParams({ lat: String(site.lat), lon: String(site.lon) });
+function useRegionalTopography(site: Site, width: number | undefined, detailFolder: string | null, closeUp = false) {
+  const polar = Math.abs(site.lat) >= 80;
+  const covered = polar || ((width === 12000 || (!width && (detailFolder || site.family === "custom"))) && Math.abs(site.lat) < 59.8);
+  const url = !covered ? null : detailFolder && !polar ? detailFolder + "/surroundings-terrain.bin"
+    : "/api/surface-topography?" + new URLSearchParams({ lat: String(site.lat), lon: String(site.lon), width: String(polar && closeUp ? 1280 : 12000) });
   const [result, setResult] = useState<{ url: string; tile: SurfaceTile } | null>(null);
   useEffect(() => {
     if (!url) return;
@@ -185,7 +199,7 @@ function useRegionalTopography(site: Site, width: number | undefined, detailFold
     void fetch(url, { signal: request.signal })
       .then(response => {
         if (!response.ok || !response.body) return null;
-        const body = detailFolder && response.headers.get("Content-Encoding") !== "gzip"
+        const body = url.endsWith(".bin") && response.headers.get("Content-Encoding") !== "gzip"
           ? response.body.pipeThrough(new DecompressionStream("gzip")) : response.body;
         return new Response(body).json();
       })
@@ -351,8 +365,8 @@ function useSurfaceRelief(url: string | null, samples: number) {
   return relief?.url === url ? relief.heights : null;
 }
 
-function LocalTerrain({ site, onImageState, terrainLighting }: {
-  site: Site; onImageState: (state: SurfaceImageState) => void; terrainLighting: boolean;
+function LocalTerrain({ site, onImageState, terrainLighting, closeUp = false }: {
+  site: Site; onImageState: (state: SurfaceImageState) => void; terrainLighting: boolean; closeUp?: boolean;
 }) {
   const terrain = useScout(s => s.terrains[site.id]);
   const view = useScout(s => s.view);
@@ -360,7 +374,7 @@ function LocalTerrain({ site, onImageState, terrainLighting }: {
   const loading = useScout(s => s.loading[packetKey(site.id, s.mastM)]);
   const detail = surfaceDetail(site);
   const detailAssets = detail ? `/assets/surface-details/${detail.site}` : null;
-  const regional = useRegionalTopography(site, terrain?.tile.widthM, detailAssets);
+  const regional = useRegionalTopography(site, terrain?.tile.widthM, detailAssets, closeUp);
   const tile = regional ?? terrain?.tile;
   const width = tile?.widthM;
   const detailWidth = detail?.extentM ?? 0, detailSamples = detail?.samples ?? 0;
@@ -372,7 +386,7 @@ function LocalTerrain({ site, onImageState, terrainLighting }: {
   const [imageState, setImageState] = useState<SurfaceImageState>("loading");
   const [detailImageState, setDetailImageState] = useState<SurfaceImageState>("loading");
   const detailTexture = useSurfaceMap(detailAssets && detailAssets + "/surface.webp", setDetailImageState);
-  const mapUrl = !width ? null : detailAssets && width === 12000 ? detailAssets + "/surroundings-12000.jpg" : imageryUrl(width);
+  const mapUrl = !width ? null : detailAssets && width === 12000 && Math.abs(site.lat) < 80 ? detailAssets + "/surroundings-12000.jpg" : imageryUrl(width);
   const map = useSurfaceMap(mapUrl, setImageState);
   const alternateMap = useSurfaceMap(
     imageState === "unavailable" && width && detailAssets && width === 12000 ? imageryUrl(width) : null,
@@ -479,7 +493,7 @@ function LocalTerrain({ site, onImageState, terrainLighting }: {
           wireframe={grid}
         />
       </mesh>
-      {view !== "horizon" && (
+      {view !== "horizon" && !closeUp && (
         <>
           <Shuttle position={[0, 0.012, 0]} scale={0.025} />
           <Html position={[0, 0.1, 0]} center>
@@ -531,6 +545,7 @@ function Scene({
   nearbyCenter,
   onNearbyPin,
   targetBearing,
+  closeUp = false,
 }: {
   onContext: (p: any) => void;
   onSnapshot: (fn: () => string) => void;
@@ -541,6 +556,7 @@ function Scene({
   nearbyCenter?: { lat: number; lon: number };
   onNearbyPin: (site: RankedSite) => void;
   targetBearing: { az: number; el: number } | null;
+  closeUp?: boolean;
 }) {
   const state = useScout(),
     { camera, gl, size, invalidate } = useThree(),
@@ -737,6 +753,7 @@ function Scene({
       target.set(0, 0, 0);
       const scale = (terrain?.tile.widthM ?? 12000) / 12000;
       position.set(7 * scale, 6 * scale, 9 * scale);
+      if (site && Math.abs(site.lat) >= 80) position.set(closeUp ? .05 : .65, closeUp ? .06 : .9, closeUp ? .08 : 1.1);
       if (state.view === "horizon") {
         position.set(0, 0.002, 0);
         target.set(0, 0.01, -10);
@@ -775,6 +792,7 @@ function Scene({
     invalidate();
   }, [
     state.view,
+    closeUp,
     state.focusVersion,
     state.trueScale,
     !!earth,
@@ -904,7 +922,7 @@ function Scene({
       />
       {local ? (
         <>
-          <LocalTerrain key={site.id} site={site} onImageState={onImageState} terrainLighting={terrainLighting} />
+          <LocalTerrain key={site.id} site={site} onImageState={onImageState} terrainLighting={terrainLighting} closeUp={closeUp} />
           {state.view === "horizon" && <HorizonSilhouette mask={mask} mast={state.mastM} />}
           {c &&
             (["sun", "earth"] as const).map((body) => {
@@ -1085,6 +1103,7 @@ export default function World(props: {
 }) {
   const [bearing, setBearing] = useState(0);
   const [surfaceImage, setSurfaceImage] = useState<SurfaceImageState>("loading");
+  const [polarCloseUp, setPolarCloseUp] = useState(false);
   const lunarLighting = useScout(s => s.lunarLighting);
   const terrainLighting = !lunarLighting;
   const toggleTerrainLighting = () => useScout.getState().set({lunarLighting:!useScout.getState().lunarLighting});
@@ -1094,13 +1113,14 @@ export default function World(props: {
       (s) => s.id === state.selected,
     );
   const solar = state.view === "solar_system";
-  const lunar = !solar && state.view !== "overview" && !state.travel && !(state.view === "polar_south" && state.statLayer);
+  const polarGround = !!selected && Math.abs(selected.lat) >= 80 && ["surface", "horizon"].includes(state.view);
+  const lunar = !solar && !polarGround && state.view !== "overview" && !state.travel && !(state.view === "polar_south" && state.statLayer);
   const closeUp = selected && surfaceDetail(selected);
   return (
     <SolarSystem onSnapshot={props.onSnapshot}>
       <div
         className={"world" + (solar ? " solar-world" : lunar ? " lunar-world" : "")}
-        aria-label={lunar ? "Interactive lunar terrain. Drag to pan, middle-drag to tilt, wheel to zoom." : "Interactive Earth–Moon map. Drag to orbit, wheel to zoom, W A S D to fly, Q and E to move vertically."}
+        aria-label={polarGround ? "Local lunar terrain at the selected coordinates. Drag to orbit and wheel to zoom." : lunar ? "Interactive lunar terrain. Drag to pan, middle-drag to tilt, wheel to zoom." : "Interactive Earth–Moon map. Drag to orbit, wheel to zoom, W A S D to fly, Q and E to move vertically."}
       >
         {lunar ? <Suspense fallback={<div className="scene-loading">Loading lunar navigation…</div>}>
           <LunarGlobe {...props} onBearing={setBearing} targetBearing={targetBearing} terrainLighting={terrainLighting} onToggleLighting={toggleTerrainLighting} />
@@ -1121,7 +1141,7 @@ export default function World(props: {
         >
           <SpaceBackdrop />
           <Suspense fallback={null}>
-            {solar ? <SolarCanvasScene /> : <Scene {...props} onBearing={setBearing} onImageState={setSurfaceImage} terrainLighting={terrainLighting} targetBearing={targetBearing} />}
+            {solar ? <SolarCanvasScene /> : <Scene {...props} onBearing={setBearing} onImageState={setSurfaceImage} terrainLighting={terrainLighting} targetBearing={targetBearing} closeUp={polarCloseUp} />}
           </Suspense>
         </Canvas>
         )}
@@ -1139,6 +1159,12 @@ export default function World(props: {
             </button>
           )}
       </div>
+      {polarGround && <div className="lunar-view-mode polar-local-mode" aria-label="Polar surface controls">
+        <span>{state.view === "surface" ? "Polar terrain flyover" : "Polar observer horizon"}</span>
+        <button type="button" onClick={() => state.set({view:state.view === "surface" ? "horizon" : "surface",focusVersion:state.focusVersion+1})}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
+        {state.view === "surface" && <button type="button" aria-pressed={polarCloseUp} onClick={() => setPolarCloseUp(value=>!value)}>{polarCloseUp ? "Wide view" : "Close-up · 60 m"}</button>}
+        <button type="button" onClick={toggleTerrainLighting}>{terrainLighting ? "Use mission lighting" : "Inspect imagery"}</button>
+      </div>}
       {state.view === "horizon" && selected && <HorizonReadout
         inspectorOpen={props.inspectorOpen} onExpand={props.onHorizonExpand}
         site={selected} bearing={bearing} imagery={lunar ? "quickmap" : surfaceImage} terrainLighting={terrainLighting}
@@ -1146,10 +1172,10 @@ export default function World(props: {
       />}
       {!lunar && state.view === "surface" && selected && (state.terrains[selected.id] || surfaceImage === "regional" || surfaceImage === "regional-imagery") && <div className="surface-imagery-credit">
         <span role="status">{(surfaceImage === "detail" || surfaceImage === "detail-terrain") && closeUp ? surfaceDetailCredit(closeUp, surfaceImage === "detail")
-          : surfaceImage === "regional-imagery" ? "Moon Trek imagery · SLDEM2015 terrain ~60 m"
-          : surfaceImage === "regional" ? "SLDEM2015 terrain ~60 m"
+          : surfaceImage === "regional-imagery" ? (polarGround ? "Moon Trek polar imagery · LOLA terrain" : "Moon Trek imagery · SLDEM2015 terrain ~60 m")
+          : surfaceImage === "regional" ? (polarGround ? "LOLA polar terrain" : "SLDEM2015 terrain ~60 m")
           : surfaceImage === "ready" ? "NASA Moon Trek · LOLA terrain" : surfaceImage === "loading" ? "Loading Moon Trek imagery…" : "LOLA terrain"}</span>
-        <button type="button" aria-pressed={!terrainLighting} onClick={toggleTerrainLighting}>Use mission lighting</button>
+        {!polarGround && <button type="button" aria-pressed={!terrainLighting} onClick={toggleTerrainLighting}>Use mission lighting</button>}
       </div>}
     </SolarSystem>
   );

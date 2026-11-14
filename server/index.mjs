@@ -12,6 +12,8 @@ import { solarPacket } from "./solar.mjs";
 import { coordinateTerrainReady, surfaceTopography, terrainAt } from "./terrain.mjs";
 import { surfaceImagery } from "./surface-imagery.mjs";
 import { lunarTerrainLayer } from "../engine/lunar-map.mjs";
+import { numericPatch } from "./terrain-tiles.mjs";
+import { polarImagery } from "./polar-imagery.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root);
 const app = express(),
@@ -119,9 +121,10 @@ app.get("/api/solar/:id", async (req, res, next) => {
 app.get("/api/terrain", async (req, res, next) => {
   try {
     const { lat, lon } = coords.parse(req.query);
+    const quality = z.enum(["quick", "full"]).parse(req.query.quality ?? "full");
     const pending = Symbol('pending');
     let timer;
-    const terrain = await Promise.race([terrainAt(lat, lon, req.query.retry === '1'),
+    const terrain = await Promise.race([terrainAt(lat, lon, req.query.retry === '1', quality),
       new Promise(resolve=>{timer=setTimeout(()=>resolve(pending),250);})]).finally(()=>clearTimeout(timer));
     if (terrain === pending) return res.status(202).json({pending:true,message:'Reading NASA elevation sections and calculating the horizon.'});
     if (!terrain) return res.status(503).json({ error: "LOLA elevation data is unavailable." });
@@ -134,10 +137,32 @@ app.get(["/api/lunar-terrain/layer.json", "/api/lunar-terrain-v2/layer.json"], (
   res.set("Cache-Control", "public, max-age=86400").json(lunarTerrainLayer);
 });
 app.use("/cesium", express.static(path.join(root, "node_modules/cesium/Build/Cesium")));
+app.get("/api/polar-imagery/:level/:x/:y.png", async (req, res, next) => {
+  try {
+    const level = z.coerce.number().int().min(0).max(13).parse(req.params.level);
+    const x = z.coerce.number().int().min(0).max(2 ** (level + 1) - 1).parse(req.params.x);
+    const y = z.coerce.number().int().min(0).max(2 ** level - 1).parse(req.params.y);
+    const north = 90 - y * 180 / 2 ** level;
+    if (north < 80 && north - 180 / 2 ** level > -80) return res.sendStatus(400);
+    res.set("Cache-Control", "public, max-age=604800").type("png").send(await polarImagery(level, x, y));
+  } catch (error) { next(error); }
+});
+app.get("/api/polar-terrain/:level/:x/:y", async (req, res, next) => {
+  try {
+    const level = z.coerce.number().int().min(3).max(14).parse(req.params.level);
+    const x = z.coerce.number().int().min(0).max(2 ** (level + 1) - 1).parse(req.params.x);
+    const y = z.coerce.number().int().min(0).max(2 ** level - 1).parse(req.params.y);
+    const north = 90 - y * 180 / 2 ** level, south = north - 180 / 2 ** level;
+    if (north < 80 && south > -80) return res.status(400).json({ error: "Use the global mesh outside the polar caps." });
+    const data = await numericPatch("map", [level, x, y]);
+    res.set("Cache-Control", "public, max-age=604800").type("json").send(data);
+  } catch (error) { next(error); }
+});
 app.get("/api/surface-topography", async (req, res, next) => {
   try {
     const { lat, lon } = coords.parse(req.query);
-    const tile = await surfaceTopography(lat, lon);
+    const width = z.coerce.number().refine(value => [512, 1280, 12000].includes(value)).parse(req.query.width ?? 12000);
+    const tile = await surfaceTopography(lat, lon, width);
     if (!tile) return res.status(204).end();
     res.set("Cache-Control", "public, max-age=604800").type("json").send(tile);
   } catch (error) {
@@ -188,7 +213,8 @@ app.get("/api/ephemeris", async (req, res, next) => {
           ? await loadTerrain(site.id)
           : null,
       custom = typeof req.query.siteId === "string" && /^custom-[a-f0-9-]{1,73}$/.test(req.query.siteId),
-      terrain = custom ? await terrainAt(lat, lon).catch(() => null) : curated;
+      terrain = custom ? await terrainAt(lat, lon, false,
+        z.enum(["quick", "full"]).parse(req.query.terrainQuality ?? "full")).catch(() => null) : curated;
     const result = await ephemeris({
       lat,
       lon,

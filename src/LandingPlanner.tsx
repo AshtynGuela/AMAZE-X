@@ -23,6 +23,12 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
   const [busy, setBusy] = useState(false), first = useRef<HTMLSelectElement>(null);
   const terrain = state.terrains[state.selected], key = packetKey(state.selected, state.mastM);
   const packet = job && packetFor(state, state.selected, job.start, job.span + job.duration);
+  useEffect(() => {
+    if (result && result.terrainQuality !== (terrain?.quality ?? "full")) {
+      setResult(null); setChosen(null);
+      setError("The detailed terrain is ready. Run the search again to check its landing windows.");
+    }
+  }, [terrain, result]);
   useEffect(() => { first.current?.focus(); }, []);
   // A change to any scientific input invalidates the displayed choices immediately.
   useEffect(() => { setJob(null); setResult(null); setChosen(null); setBusy(false); setError(''); },
@@ -50,7 +56,7 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
         return;
       }
       setBusy(false); setJob(null);
-      setResult({...landing, tested, mode:job.mode, searchedStart:job.origin, searchedEnd:job.end});
+      setResult({...landing, tested, mode:job.mode, searchedStart:job.origin, searchedEnd:job.end, terrainQuality:terrain?.quality ?? "full"});
     };
     worker.onerror = e => { setBusy(false); setError(e.message || 'Calculation could not start. Try again.'); };
     worker.postMessage({id:'landing',kind:'landing',data:packet,start:job.start,end:job.end,
@@ -207,6 +213,7 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
       {(error || networkError) && <p className="error-text" role="alert">{error || networkError}</p>}
       {networkError && job && <button onClick={()=>{setError('');setBusy(true);ensureData(site,job.start,job.span+job.duration,true);}}>Retry current search</button>}
       {site.family==='custom' && !terrain && !state.loading[key] && <p className="quality limited">LOLA terrain unavailable. Calculations use a smooth horizon.</p>}
+      {terrain?.quality === "quick" && <p className="quality limited">Preliminary terrain screening. The detailed skyline is loading; landing requires the detailed result.</p>}
       {!manual && result && <section className="landing-results" aria-live="polite">
         <h3>{result.cancelled ? 'Search stopped' : result.windows.length ? (result.mode === 'next' ? 'Next matching window found' : `${result.windows.length} candidate ${result.windows.length===1?'window':'windows'}`) : 'No dates meet these limits'}</h3>
         <p className="data-note">{result.matching} of {result.tested} hourly arrival times meet all three limits.</p>
@@ -222,13 +229,13 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
             <span className="landing-candidate-metrics"><b>{recommended.sunlitPct.toFixed(1)}% sunlight</b><b>{recommended.earthDtePct.toFixed(1)}% contact</b><b>{recommended.longestDarkH.toFixed(1)} h max darkness</b></span>
           </span>
         </label>})}
-        <p className="data-note">Hourly arrivals · NASA/JPL positions · {terrain ? 'LOLA terrain' : 'Smooth horizon'}</p>
+        <p className="data-note">Hourly arrivals · NASA/JPL positions · {terrain?.quality === "quick" ? 'Preliminary LOLA screening' : terrain ? 'LOLA terrain' : 'Smooth horizon'}</p>
       </section>}
       {manual && !live && Number.isFinite(Date.parse(epoch + 'Z')) && <p className="data-note">
         Estimated departure {dateLabel(Date.parse(epoch + 'Z') - timing.flightHours * HOUR)} UTC.
       </p>}
       <footer><button disabled={!manual && chosen===null} onClick={()=>submit(false)}>Add to comparison</button>
-        <button className="primary" disabled={!terrain || (!manual && chosen===null)} onClick={()=>submit(true)}>Travel &amp; land <ArrowUpRight size={16}/></button></footer>
+        <button className="primary" disabled={!terrain || terrain.quality === "quick" || (!manual && chosen===null)} onClick={()=>submit(true)}>Travel &amp; land <ArrowUpRight size={16}/></button></footer>
     </section>
   </div>;
 }
