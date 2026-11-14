@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runTerrainWork } from "./terrain-work.mjs";
 const run = promisify(execFile), root = fileURLToPath(new URL("../", import.meta.url));
-const folder = path.join(root, ".cache/polar-imagery-v4"), jobs = new Map();
+const folder = path.join(root, ".cache/polar-imagery-quickmap-v2"), jobs = new Map();
 export async function polarImagery(level, x, y) {
   const key = `${level}-${x}-${y}`, file = path.join(folder, key + ".png");
   const cached = await fs.readFile(file).catch(() => null);

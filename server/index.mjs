@@ -146,7 +146,7 @@ app.get("/api/polar-imagery/:level/:x/:y.png", async (req, res, next) => {
     const x = z.coerce.number().int().min(0).max(2 ** (level + 1) - 1).parse(req.params.x);
     const y = z.coerce.number().int().min(0).max(2 ** level - 1).parse(req.params.y);
     const north = 90 - y * 180 / 2 ** level;
-    if (north < 80 && north - 180 / 2 ** level > -80) return res.sendStatus(400);
+    if (north < 60 && north - 180 / 2 ** level > -60) return res.sendStatus(400);
     res.set("Cache-Control", "public, max-age=604800").type("png").send(await polarImagery(level, x, y));
   } catch (error) { next(error); }
 });

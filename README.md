@@ -157,3 +157,10 @@ Recorded shadows in the image mosaic remain; dynamic lighting does not remove ac
 `engine/app-actions.mjs` is the shared validated action protocol and feature guide. `server/app-tools.mjs` supplies app inspection, native feature requests, scientific comparison and landing-window tools. `src/app-actions.ts` revalidates each action and uses the same store and dialogs as manual controls; the App bridge returns actual success/failure. Tool-validated parameters take priority over model prose. Backend credentials stay on the server. Vision requests never fall back to a text-only model.
 
 Terminology: **Sunlight during stay** is time counted as sunlit; **Earth above terrain** is geometric visibility; **usable Earth contact (DTE)** also meets the antenna angle. **Relative solar power** is an incidence index, not generated energy. **Terrain skyline** is the highest surrounding obstruction in each compass direction. Retain technical values under these explanations.
+
+
+### Polar rendering correction — 15 November 2026
+
+Polar LOLA patches now use quantized meshes with oct-encoded relief normals, matching the surrounding QuickMap provider. The earlier heightmap replacements had no vertex normals even though the shared provider advertised them, which selected an incompatible lighting shader. Exact-pole normals are stable across longitude, and collapsed Cartesian triangles retain their geographic UV coverage for height sampling.
+
+The polar image overlay now samples the same `wac_nac_nacroi` orthographic north/south basemaps used by ACT QuickMap (`lunar-orthonp` / `lunar-orthosp`). It reprojects those native 512-pixel tiles into geographic cap tiles, with independent source/output cache versioning. This replaces the separate Moon Trek WAC/NAC overlay; the numerical LOLA horizons and JPL calculations are unchanged. Tests cover normal availability, outward relief normals, height interpolation at both exact poles, and the north/south orthographic cardinal directions.

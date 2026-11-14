@@ -1,0 +1,22 @@
+{
+  "reviewedDate": "2026-11-15",
+  "scope": "Local production build; north and south overviews, north detail refinement and lighting toggle",
+  "reference": "https://quickmap.lroc.im-ldi.com/",
+  "imagerySources": [
+    "https://lroc-tiles.quickmap.io/tiles/wac_nac_nacroi/lunar-orthonp/{z}/{x}/{y}.jpg",
+    "https://lroc-tiles.quickmap.io/tiles/wac_nac_nacroi/lunar-orthosp/{z}/{x}/{y}.jpg"
+  ],
+  "rootCause": "Heightmap polar tiles supplied no normals under a provider advertising vertex normals; separate polar mosaic and hard 80-degree cutoff also produced inconsistent visual coverage.",
+  "fix": "Quantized meshes with oct-encoded relief normals, stable pole normals and geographic UV coverage; orthographic QuickMap imagery blended from 60 to 65 degrees latitude; versioned image caches.",
+  "tests": {
+    "javascriptPassed": 57,
+    "pythonPassed": 17,
+    "productionBuild": "passed",
+    "browserConsoleErrorsObserved": []
+  },
+  "limitations": [
+    "Tiles refine progressively and require upstream service availability.",
+    "Imagery retains acquisition lighting.",
+    "Numerical terrain horizons and JPL analysis were not changed by this rendering fix."
+  ]
+}

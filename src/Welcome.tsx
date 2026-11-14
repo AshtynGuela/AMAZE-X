@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { ChevronsUp } from "lucide-react";
 import "./welcome.css";
 
 type Props = { ready: boolean; begin: () => void; enter: () => void; skip: () => void; prepare: () => void };
@@ -121,8 +120,15 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
   }, []);
   return <section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
     className="mission-welcome mission-welcome--ambient"
+    onClick={event => {
+      // Credits remain normal links; the rest of the page uses the same reveal
+      // as scrolling, including waiting for the map's first rendered frame.
+      if ((event.target as Element).closest("a,button,input,select,textarea")) return;
+      drive.current(0, true);
+    }}
     onKeyDown={event => {
-      if (["ArrowUp", "PageUp"].includes(event.key)) {
+      if (["ArrowUp", "PageUp"].includes(event.key) ||
+          (event.target === event.currentTarget && ["Enter", " "].includes(event.key))) {
         event.preventDefault(); event.stopPropagation(); drive.current(0, true); return;
       }
       if (event.key === "Escape") { event.stopPropagation(); skip(); }
@@ -153,11 +159,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       <h1 id="welcome-title" aria-label="AMAZE-X"><span className="mission-welcome__wordmark">AMAZE</span><span data-node-id="23:120" className="mission-welcome__x" aria-hidden="true"><img src="/assets/welcome/x-glass.svg" alt="" width="49" height="53" /></span></h1>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
-      <div className="mission-welcome__scroll-hint">
-        <ChevronsUp size={14} aria-hidden="true" />
-        <span aria-hidden="true">scroll</span>
-      </div>
-      <span className="sr-only" id="welcome-scroll-hint">Scroll up or swipe up to explore the Solar System. You can also press Up Arrow or Page Up.</span>
+      <span className="sr-only" id="welcome-scroll-hint">Press Enter or Space to explore the Solar System. Scroll up, swipe up, Up Arrow and Page Up also work.</span>
       </div>
     </div>
     <footer className="mission-welcome__credits" aria-label="Credits">

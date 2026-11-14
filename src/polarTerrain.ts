@@ -1,10 +1,11 @@
-import { HeightmapTerrainData, type CesiumTerrainProvider, type Request } from "cesium";
+import { type QuantizedMeshTerrainData, type CesiumTerrainProvider, type Request } from "cesium";
+import { polarMesh } from "../engine/polar-mesh.mjs";
 
 // Preserve QuickMap's progressively loaded mesh globally. For tiles touching
 // either pole, use numeric PDS LOLA stereographic heights resampled into the
 // actual geographic tile. No texture value becomes a geometry displacement.
 export function withPolarTerrain(base: CesiumTerrainProvider) {
-  const cache = new Map<string, Promise<HeightmapTerrainData>>();
+  const cache = new Map<string, Promise<QuantizedMeshTerrainData>>();
   const controllers = new Set<AbortController>();
   let disposed = false;
   const dispose = () => { disposed = true; controllers.forEach(c => c.abort()); controllers.clear(); cache.clear(); };
@@ -27,8 +28,8 @@ export function withPolarTerrain(base: CesiumTerrainProvider) {
         if (patch.size !== 65 || patch.heightsM.length !== 65 ** 2 ||
             !patch.heightsM.every((height: number) => Number.isFinite(height) && Math.abs(height) <= 12000))
           throw new Error("Invalid NASA polar terrain tile");
-        return new HeightmapTerrainData({ buffer: new Float32Array(patch.heightsM), width: 65, height: 65,
-          childTileMask: level >= 14 || (level >= 12 && patch.resolutionM >= 20) ? 0 : 15 });
+        return polarMesh(patch, base.tilingScheme.tileXYToRectangle(x, y, level), base.tilingScheme.ellipsoid,
+          level >= 14 || (level >= 12 && patch.resolutionM >= 20) ? 0 : 15);
       }).catch(error => { cache.delete(key); throw error; }).finally(() => controllers.delete(controller));
       cache.set(key, result);
       if (cache.size > 160) cache.delete(cache.keys().next().value!);

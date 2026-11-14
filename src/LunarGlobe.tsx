@@ -152,11 +152,11 @@ export default function LunarGlobe(props: Props) {
     v.imageryLayers.addImageryProvider(imagery);
     for (const north of [true, false]) {
       v.imageryLayers.addImageryProvider(new UrlTemplateImageryProvider({
-        url: "/api/polar-imagery/{z}/{x}/{y}.png",
+        url: "/api/polar-imagery/{z}/{x}/{y}.png?source=quickmap-v2",
         tilingScheme: new GeographicTilingScheme({ ellipsoid: moon }),
-        rectangle: Rectangle.fromDegrees(-180, north ? 80 : -90, 180, north ? 90 : -80),
-        tileWidth: 256, tileHeight: 256, maximumLevel: 13,
-        credit: new Credit("NASA Moon Trek · LROC polar mosaics"),
+        rectangle: Rectangle.fromDegrees(-180, north ? 60 : -90, 180, north ? 90 : -60),
+        tileWidth: 512, tileHeight: 512, maximumLevel: 13,
+        credit: new Credit("ACT QuickMap · LROC orthographic polar mosaics"),
         hasAlphaChannel: true,
       }));
     }
