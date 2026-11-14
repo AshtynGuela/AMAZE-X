@@ -64,6 +64,8 @@ import {
 } from "./Charts";
 import { APP_NAME } from "../engine/app-actions.mjs";
 import Welcome from "./Welcome";
+import { SiteAsset, SiteBackdrop, SiteWordmark } from "./SiteChrome";
+import "./site-ui.css";
 import { FEATURE_EVENT, type ActionResult } from "./app-actions";
 import { encodeSession, decodeSession } from "./share.mjs";
 import type { NearbyMission, NearbyPoint, RankedSite } from "./NearbySites";
@@ -164,6 +166,9 @@ export default function App() {
     ? conditions(packet, state.time, mask, state.minAntennaEl)
     : null, [packet, state.time, mask, state.minAntennaEl]);
   const solar = state.view === "solar_system";
+  useEffect(() => {
+    if (!solar && !useScout.getState().rail) useScout.getState().set({ rail: "sites" });
+  }, [solar]);
   const activeScenario = selectedScenario(state),
     probe = useMemo(
       () => ({
@@ -594,15 +599,17 @@ export default function App() {
       : [];
   return (
     <main
+      data-mode={state.mode}
       data-phone-details={phoneDetails && inspector ? "open" : "closed"}
       className={
         "app" +
         (inspector && !solar ? " has-inspector" : "") +
-        (solar ? " solar-mode" : "") +
+        (solar ? " solar-mode" : " lunar-ui") +
         (intro ? " app--entering" : "")
       }
       onPointerDown={() => menu && setMenu(null)}
     >
+      {!solar && <SiteBackdrop />}
       <a className="skip-link" href="#site-inspector">
         Skip to site analysis
       </a>
@@ -635,6 +642,7 @@ export default function App() {
         <a
           href="#"
           className="brand"
+          aria-label={APP_NAME}
           onClick={(e) => {
             e.preventDefault();
             setPhoneDetails(false);
@@ -645,10 +653,7 @@ export default function App() {
             });
           }}
         >
-          <Orbit size={29} strokeWidth={1.4} />
-          <span>
-            <strong>{APP_NAME}</strong>
-          </span>
+          {solar ? <><Orbit size={29} strokeWidth={1.4} /><span><strong>{APP_NAME}</strong></span></> : <SiteWordmark />}
         </a>
         <div className="top-centre">
           <span className="live-dot" />{" "}
@@ -716,7 +721,7 @@ export default function App() {
                 : rail(id)
             }
           >
-            <Icon size={20} />
+            {solar ? <Icon size={20} /> : <span className={`site-rail-icon site-rail-${id}`}><SiteAsset name={id === "sites" ? "sites" : id === "clock" ? "clock" : id as string} /></span>}
             <span>{label}</span>
           </button>
         ))}
@@ -735,7 +740,7 @@ export default function App() {
             <h2>
               {
                 {
-                  sites: "Landing sites",
+                  sites: solar ? "Landing sites" : "Landing Sites",
                   clock: "Mission clock",
                   layers: "Map layers",
                   settings: "Settings",
@@ -746,12 +751,13 @@ export default function App() {
               label="Close tools"
               onClick={() => state.set({ rail: null })}
             >
-              <X size={17} />
+              {solar ? <X size={17} /> : <SiteAsset name="collapse" />}
             </IconButton>
           </header>
           {state.rail === "sites" && (
             <>
               <p className="muted">Find a place. Explore its possibilities.</p>
+              {!solar && <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>}
               <input
                 className="site-search"
                 placeholder="Search the Moon…"
@@ -995,6 +1001,17 @@ export default function App() {
                 Earth contact requires Earth’s centre to clear the horizon and
                 your antenna’s minimum elevation.
               </p>
+              {!solar && <>
+                <h3>Navigation</h3>
+                <label>Explore view<select aria-label="Explore view" value={state.view} onChange={event => state.set({ view: event.target.value as any })}>
+                  <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option>
+                  <option value="globe">Moon</option><option value="polar_south">South pole</option><option value="polar_north">North pole</option>
+                  <option value="surface">Terrain flyover</option><option value="horizon">Horizon</option>
+                </select></label>
+                <label><input type="checkbox" checked={inspector} onChange={event => setInspector(event.target.checked)} /> Show site details</label>
+                <button onClick={() => setSources(true)}>Data and methodology</button>
+                <button onClick={() => setHelp(true)}>Controls and shortcuts</button>
+              </>}
               <h3>Rocky connection</h3>
               <p className="connection">
                 {!health ? "Checking connection…" : health.primaryConfigured
@@ -1148,6 +1165,7 @@ export default function App() {
                       <dt>Compass bearing</dt><dd>{deg(current.earth.az)} ({bearing(current.earth.az)})</dd></dl></details>
                   </section>
                 </div>
+                <h2 className="site-crossing-title">Next Crossing</h2>
                 <p
                   className={
                     "eclipse-status" +
@@ -1444,27 +1462,28 @@ export default function App() {
         </section>
       )}
       <div className="clockbar">
+        {!solar && <button className="site-view-360" aria-label="Show whole Moon" title="Show whole Moon" onClick={() => state.set({ view: "globe", cameraCommand: { mode: "whole_moon", version: (state.cameraCommand?.version ?? 0) + 1 } })}><SiteAsset name="view-360" /></button>}
         <div className="transport">
           <IconButton
             label="Step back one hour"
             onClick={() => state.set({ time: state.time - HOUR })}
           >
-            <SkipBack size={16} />
+            {solar ? <SkipBack size={16} /> : <SiteAsset name="previous" />}
           </IconButton>
           <IconButton
             label={state.playing ? "Pause time" : "Play time"}
             onClick={() => state.set({ playing: !state.playing })}
           >
-            {state.playing ? <Pause size={17} /> : <Play size={17} />}
+            {state.playing ? <Pause size={17} /> : solar ? <Play size={17} /> : <SiteAsset name="play" />}
           </IconButton>
           <IconButton
             label="Step forward one hour"
             onClick={() => state.set({ time: state.time + HOUR })}
           >
-            <SkipForward size={16} />
+            {solar ? <SkipForward size={16} /> : <SiteAsset name="next" />}
           </IconButton>
         </div>
-        <button className="clock-readout" onClick={() => rail("clock")}>
+        <button className="clock-readout" title="Mission time in UTC · open time controls" onClick={() => rail("clock")}>
           <span>{utc(state.time)}</span>
           <small>UTC</small>
         </button>

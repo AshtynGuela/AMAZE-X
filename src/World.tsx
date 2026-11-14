@@ -1137,7 +1137,7 @@ export default function World(props: {
             logarithmicDepthBuffer: true,
           }}
           onCreated={({ gl }) => {
-            gl.setClearColor("#080d12");
+            gl.setClearColor("#080d12", solar ? 1 : 0);
           }}
         >
           <SpaceBackdrop onReady={solar ? props.onReady : undefined} />

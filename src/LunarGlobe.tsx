@@ -97,12 +97,12 @@ export default function LunarGlobe(props: Props) {
       skyAtmosphere: false, skyBox: false, scene3DOnly: true,
       requestRenderMode: true, maximumRenderTimeChange: Infinity,
       useBrowserRecommendedResolution: false,
-      contextOptions: { webgl: { alpha: false, antialias: true, preserveDrawingBuffer: true } },
+      contextOptions: { webgl: { alpha: true, antialias: true, preserveDrawingBuffer: true } },
     });
     viewer.current = v;
     previousTime.current = useScout.getState().time;
     v.resolutionScale = Math.min(devicePixelRatio, 1.5) / devicePixelRatio;
-    v.scene.backgroundColor = Color.fromCssColorString("#080d12");
+    v.scene.backgroundColor = Color.TRANSPARENT;
     v.scene.fog.enabled = false;
     if (v.scene.sun) v.scene.sun.show = false;
     if (v.scene.moon) v.scene.moon.show = false;

@@ -39,6 +39,10 @@ function SpaceArt({ onReady }: { onReady?: () => void }) {
 }
 
 export default function SpaceBackdrop({ onReady }: { onReady?: () => void }) {
+  const solar = useScout(state => state.view === "solar_system");
+  const gl = useThree(state => state.gl);
+  useEffect(() => { gl.setClearColor("#080d12", solar ? 1 : 0); }, [gl, solar]);
+  if (!solar) return null;
   return <>
     <color attach="background" args={["#080d12"]} />
     <Suspense fallback={null}><SpaceArt onReady={onReady} /></Suspense>

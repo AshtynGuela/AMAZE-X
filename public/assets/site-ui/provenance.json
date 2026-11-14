@@ -1,0 +1,94 @@
+{
+  "fileKey": "us7HrDlifYdVAzJaQM4m3F",
+  "nodeId": "1:3",
+  "assets": [
+    {
+      "name": "starfield.png",
+      "url": "https://www.figma.com/api/mcp/asset/cc6d6ade-c9b3-4d7a-9ca3-a704b2bafead.png"
+    },
+    {
+      "name": "sidebar-glass.png",
+      "url": "https://www.figma.com/api/mcp/asset/47b66834-29a1-47e1-835d-68cfcb00c95c.png"
+    },
+    {
+      "name": "rail-noise.png",
+      "url": "https://www.figma.com/api/mcp/asset/9db87c51-0c4a-465a-97a3-1621908996af.png"
+    },
+    {
+      "name": "header-grain.png",
+      "url": "https://www.figma.com/api/mcp/asset/6352b75c-4493-4f83-840f-1c89810f025d.png"
+    },
+    {
+      "name": "panel-grain.png",
+      "url": "https://www.figma.com/api/mcp/asset/59d9e573-2c66-45be-a3c5-d5b6875eec70.png"
+    },
+    {
+      "name": "sites.svg",
+      "url": "https://www.figma.com/api/mcp/asset/7749bb75-9ae4-4008-ad31-5b52b63060cd.svg"
+    },
+    {
+      "name": "clock.svg",
+      "url": "https://www.figma.com/api/mcp/asset/10794797-4864-480f-87e8-404e1b832ebc.svg"
+    },
+    {
+      "name": "layers.svg",
+      "url": "https://www.figma.com/api/mcp/asset/dae4fb01-c1d5-43eb-bea2-6dfd8afdbc46.svg"
+    },
+    {
+      "name": "compare.svg",
+      "url": "https://www.figma.com/api/mcp/asset/678d2f89-96a7-4861-9718-4bcf1fb5eb9b.svg"
+    },
+    {
+      "name": "settings.svg",
+      "url": "https://www.figma.com/api/mcp/asset/8b0025e8-440b-4d99-bb05-cce115c30832.svg"
+    },
+    {
+      "name": "left-shade.svg",
+      "url": "https://www.figma.com/api/mcp/asset/039fd816-8d0b-4328-aa9a-9a120a71ed5f.svg"
+    },
+    {
+      "name": "sidebar-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/20ea793e-46d2-48e1-bd1a-1ad6049b01fc.svg"
+    },
+    {
+      "name": "rail-reflection.svg",
+      "url": "https://www.figma.com/api/mcp/asset/e6f4f762-5236-400c-a304-d60a12777435.svg"
+    },
+    {
+      "name": "reference-graph.svg",
+      "url": "https://www.figma.com/api/mcp/asset/9901182b-72d8-47ab-9f39-ccaf1cb2eab5.svg"
+    },
+    {
+      "name": "inspector-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/4d8be519-64a7-45ee-89dc-69e80ad666aa.svg"
+    },
+    {
+      "name": "planning-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/ab0e8e1f-a366-4677-bf6a-e92594ff5e2a.svg"
+    },
+    {
+      "name": "collapse.svg",
+      "url": "https://www.figma.com/api/mcp/asset/b8204691-4883-4323-8589-4faf09fbea08.svg"
+    },
+    {
+      "name": "next.svg",
+      "url": "https://www.figma.com/api/mcp/asset/dc43c4d3-06dc-4f4c-91a2-579ce54c336c.svg"
+    },
+    {
+      "name": "play.svg",
+      "url": "https://www.figma.com/api/mcp/asset/10a5bc49-2bf1-4995-b143-40e76a1b4f0d.svg"
+    },
+    {
+      "name": "previous.svg",
+      "url": "https://www.figma.com/api/mcp/asset/432a2eb4-82ee-470e-affd-a49fc07f5ae3.svg"
+    },
+    {
+      "name": "view-360.svg",
+      "url": "https://www.figma.com/api/mcp/asset/17767dc8-822b-4682-907c-3f33238e9ed8.svg"
+    }
+  ],
+  "usageNotes": {
+    "reference-graph.svg": "Design reference only. Runtime uses the existing live NASA/JPL and LOLA SkyStrip plot, not the sample curve.",
+    "staticAssets": "All other exports are used unmodified in their corresponding icon, texture, divider or starfield slots. SVG intrinsic dimensions are preserved."
+  }
+}

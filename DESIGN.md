@@ -241,3 +241,7 @@ The supplied 3D character moves freely over the app. Click to chat, drag to repo
 - **Don't** turn passive context chips into interactive controls without a real action.
 - **Don't** treat the palette, metaphor or synthesized preview ramps as evidence of a separate user-approved visual workshop.
 - **Don't** extend detailed landing-site analysis beyond the Moon or replace the map-first console with a marketing-page composition.
+
+## Landing-site workspace — Figma 1:3
+
+The lunar workspace uses `src/SiteChrome.tsx` and scoped `src/site-ui.css`, with unmodified exports and provenance in `public/assets/site-ui/`. The top-left Plain/Engineer toggle is the only added header control. The original map, site catalogue, planning, nearby search, timeline and export handlers are retained. Navigation and source/help controls are available through Settings; the brand returns to the Solar System. The sample Figma graph is replaced by the existing live scientific plot. A transparent map canvas lets the supplied monochrome starfield sit behind the real globe; numerical terrain, lighting and ephemeris calculations are unchanged. Phone layouts use larger reading text, a narrow icon rail, and a scrollable details panel.
