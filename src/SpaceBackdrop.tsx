@@ -9,9 +9,8 @@ const art = ["solar-system", "earth-moon", "moon"].map(name => folder + name + "
 
 function SpaceArt() {
   const view = useScout(s => s.view);
-  const [solar, overview, moon] = useTexture(art, textures => {
-    for (const texture of textures) texture.colorSpace = SRGBColorSpace;
-  });
+  const texture = useTexture(art[view === "solar_system" ? 0 : view === "overview" ? 1 : 2]);
+  texture.colorSpace = SRGBColorSpace;
   const plane = useRef<Mesh>(null);
   const offset = useRef(new Vector3());
   const size = useThree(s => s.size);
@@ -29,7 +28,7 @@ function SpaceArt() {
   return (
     <mesh ref={plane} renderOrder={-1000} frustumCulled={false} raycast={() => {}}>
       <planeGeometry />
-      <meshBasicMaterial map={view === "solar_system" ? solar : view === "overview" ? overview : moon}
+      <meshBasicMaterial map={texture}
         color="#c5c8d0" depthTest={false} depthWrite={false} toneMapped={false} />
     </mesh>
   );

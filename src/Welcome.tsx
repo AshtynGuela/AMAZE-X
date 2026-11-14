@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 import "./welcome.css";
 
-type Props = { departing: boolean; enter: () => void; skip: () => void };
+type Props = { departing: boolean; enter: () => void; skip: () => void; prepare: () => void };
 export const WELCOME_ENTRY_MS = 2000;
 
-export default function Welcome({ departing, enter, skip }: Props) {
+export default function Welcome({ departing, enter, skip, prepare }: Props) {
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     const node = panel.current;
@@ -44,14 +44,14 @@ export default function Welcome({ departing, enter, skip }: Props) {
     <div className="mission-welcome__space" aria-hidden="true">
       <div className="mission-welcome__composition">
         <div className="mission-welcome__stars">
-          {[0, 1, 2].map(strip => <div className="mission-welcome__star-strip" key={strip}><img src="/assets/welcome/astronaut.png" alt="" width="1440" height="1024" fetchPriority={strip === 0 ? "high" : "auto"} decoding="async" /></div>)}
+          {[0, 1, 2].map(strip => <div className="mission-welcome__star-strip" key={strip}><img src="/assets/welcome/astronaut.webp" alt="" width="1440" height="1024" fetchPriority={strip === 0 ? "high" : "auto"} decoding="async" /></div>)}
         </div>
         <div className="mission-welcome__stars mission-welcome__stars--near">
-          {[0, 1, 2].map(strip => <div className="mission-welcome__star-strip" key={strip}><img src="/assets/welcome/astronaut.png" alt="" width="1440" height="1024" decoding="async" /></div>)}
+          {[0, 1, 2].map(strip => <div className="mission-welcome__star-strip" key={strip}><img src="/assets/welcome/astronaut.webp" alt="" width="1440" height="1024" decoding="async" /></div>)}
         </div>
         <div className="mission-welcome__glow" />
-        <img className="mission-welcome__light" src="/assets/welcome/astronaut.png" alt="" width="1440" height="1024" decoding="async" />
-        <img className="mission-welcome__astronaut" src="/assets/welcome/astronaut.png" alt="" width="1440" height="1024" decoding="async" />
+        <img className="mission-welcome__light" src="/assets/welcome/astronaut.webp" alt="" width="1440" height="1024" decoding="async" />
+        <img className="mission-welcome__astronaut" src="/assets/welcome/astronaut.webp" alt="" width="1440" height="1024" decoding="async" />
       </div>
     </div>
     <div className="mission-welcome__content">
@@ -60,7 +60,7 @@ export default function Welcome({ departing, enter, skip }: Props) {
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
       <div className="mission-welcome__actions">
-        <button className="mission-welcome__enter" onClick={enter} disabled={departing}>Enter the Solar System <ArrowUpRight size={20} aria-hidden="true" /></button>
+        <button className="mission-welcome__enter" onPointerEnter={prepare} onFocus={prepare} onPointerDown={prepare} onClick={enter} disabled={departing}>Enter the Solar System <ArrowUpRight size={20} aria-hidden="true" /></button>
         <button className="mission-welcome__skip" onClick={skip} disabled={departing}>Skip introduction</button>
       </div>
       </div>

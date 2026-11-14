@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import compression from "compression";
+import { staticAssets } from "./static-assets.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createServer as createHttpServer } from "node:http";
@@ -96,7 +97,7 @@ app.get("/api/health", async (req, res) => {
   });
 });
 app.get("/api/sites", async (req, res) =>
-  res.json(
+  res.set("Cache-Control", "public, max-age=30, must-revalidate").json(
     await Promise.all(
       sites.map(async (s) => {
         const terrain = await loadTerrain(s.id);
@@ -113,7 +114,8 @@ app.get("/api/sites", async (req, res) =>
 app.get("/api/solar/:id", async (req, res, next) => {
   try {
     const iso = date.parse(req.query.time);
-    res.json(await solarPacket(req.params.id, Date.parse(iso)));
+    const packet = await solarPacket(req.params.id, Date.parse(iso));
+    res.set("Cache-Control", "public, max-age=3600, must-revalidate").json(packet);
   } catch (e) {
     next(e);
   }
@@ -136,7 +138,8 @@ app.get("/api/terrain", async (req, res, next) => {
 app.get(["/api/lunar-terrain/layer.json", "/api/lunar-terrain-v2/layer.json"], (req, res) => {
   res.set("Cache-Control", "public, max-age=86400").json(lunarTerrainLayer);
 });
-app.use("/cesium", express.static(path.join(root, "node_modules/cesium/Build/Cesium")));
+if (!process.argv.includes("--production"))
+  app.use("/cesium", express.static(path.join(root, "node_modules/cesium/Build/Cesium")));
 app.get("/api/polar-imagery/:level/:x/:y.png", async (req, res, next) => {
   try {
     const level = z.coerce.number().int().min(0).max(13).parse(req.params.level);
@@ -190,7 +193,7 @@ app.get("/api/terrain/:id", async (req, res) => {
       error:
         "Official LOLA terrain is still being prepared. Terrain analysis is not available yet.",
     });
-  res.json(terrain);
+  res.set("Cache-Control", "public, max-age=300, must-revalidate").json(terrain);
 });
 app.get("/api/ephemeris", async (req, res, next) => {
   try {
@@ -347,9 +350,9 @@ app.use((err, req, res, next) => {
 const production = process.argv.includes("--production");
 const server = createHttpServer(app);
 if (production) {
-  app.use(express.static(path.join(root, "dist")));
+  app.use(staticAssets(path.join(root, "dist")));
   app.get("/{*path}", (req, res) =>
-    res.sendFile(path.join(root, "dist/index.html")),
+    res.set("Cache-Control", "no-cache").sendFile(path.join(root, "dist/index.html")),
   );
 } else {
   const { createServer } = await import("vite");

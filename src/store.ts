@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { jsonFetch } from "./json-fetch.mjs";
+export { jsonFetch } from "./json-fetch.mjs";
 import { persist } from "zustand/middleware";
 export type Site = {
   id: string;
@@ -256,12 +258,6 @@ export function packetFor(
         ? p.observer.terrainApplied && p.observer.elevationM === state.terrains[id].elevationM
         : !p.observer.terrainApplied),
   )?.[1];
-}
-export async function jsonFetch(url: string, options?: RequestInit) {
-  const res = await fetch(url, options);
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
-  return json;
 }
 export async function ensureData(
   site: Site,

@@ -111,7 +111,7 @@ function Model({ clip, paused, replay, onReady }: { clip: string; paused: boolea
     if (action) action.paused = paused;
     invalidate();
     if (paused) return;
-    const timer = setInterval(invalidate, 1000 / 30);
+    const timer = setInterval(() => { if (!document.hidden) invalidate(); }, 1000 / 30);
     return () => clearInterval(timer);
   }, [actions, clip, paused, replay, invalidate]);
   return <group ref={ref}><primitive object={scene} /></group>;

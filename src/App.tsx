@@ -72,7 +72,8 @@ import {
   missionEpoch,
   reportCsv,
 } from "../engine/report.mjs";
-const World = lazy(() => import("./World"));
+const prepareWorld = () => import("./World");
+const World = lazy(prepareWorld);
 const Rocky = lazy(() => import("./Rocky"));
 const DateSlip = lazy(() => import("./DateSlip"));
 const ScenarioDialog = lazy(() => import("./LandingPlanner"));
@@ -148,6 +149,7 @@ export default function App() {
     [ranked, setRanked] = useState<{ center: NearbyPoint; rows: RankedSite[]; mission: NearbyMission } | null>(null),
     snapshot = useRef<() => string>(() => ""),
     menuRef = useRef<HTMLDivElement>(null);
+  const updateSnapshot = useCallback((fn: () => string) => { snapshot.current = fn; }, []);
   const sites = useMemo(() => [...state.sites, ...state.custom], [state.sites, state.custom]);
   const nativeFeature = useRef<(action:any)=>Promise<ActionResult>>(null);
   const
@@ -221,6 +223,7 @@ export default function App() {
     const poll = setInterval(() => {
       if (document.hidden) return;
       const latest = useScout.getState();
+      if (latest.welcome) return;
       if (latest.sites.length && latest.sites.every(site => site.terrainReady) &&
           latest.layerManifest.heightReady && latest.rail !== "settings") return;
       jsonFetch("/api/sites")
@@ -241,7 +244,7 @@ export default function App() {
     return () => clearInterval(poll);
   }, []);
   useEffect(() => {
-    if (!site || solar || state.travel) return;
+    if (!site || solar || state.travel || state.welcome) return;
     const timer = setTimeout(
       () => ensureData(site, state.time, activeScenario?.durationDays || 1),
       250,
@@ -256,10 +259,11 @@ export default function App() {
     state.epochVersion,
     !!terrain,
     !!state.travel,
+    state.welcome,
     solar,
   ]);
   useEffect(() => {
-    if (solar || state.travel) return;
+    if (solar || state.travel || state.welcome) return;
     state.scenarios.forEach((s) => {
       const loc = sites.find((site) => site.id === s.siteId);
       if (loc)
@@ -277,6 +281,7 @@ export default function App() {
     state.packets,
     state.loading,
     !!state.travel,
+    state.welcome,
     solar,
   ]);
   useEffect(() => {
@@ -610,7 +615,7 @@ export default function App() {
       <a className="skip-link" href="#site-inspector">
         Skip to site analysis
       </a>
-      <SceneBoundary>
+      {(!state.welcome || intro) && <SceneBoundary>
         <Suspense
           fallback={
             <div className="scene-loading">Preparing space navigation…</div>
@@ -630,12 +635,10 @@ export default function App() {
                 state.set({ pickingSite: false });
               } else setMenu(point);
             }}
-            onSnapshot={useCallback((fn) => {
-              snapshot.current = fn;
-            }, [])}
+            onSnapshot={updateSnapshot}
           />
         </Suspense>
-      </SceneBoundary>
+      </SceneBoundary>}
       <header className="topbar">
         <a
           href="#"
@@ -1593,9 +1596,9 @@ export default function App() {
         {slip && <DateSlip close={() => setSlip(false)} />}
       </Suspense>
       <Suspense fallback={null}>
-        {rockyStarted && <Rocky snapshot={() => snapshot.current()} hasInspector={inspector && !solar} />}
+        {rockyStarted && !state.welcome && <Rocky snapshot={() => snapshot.current()} hasInspector={inspector && !solar} />}
       </Suspense>
-      {state.welcome && <Welcome departing={intro} enter={() => {
+      {state.welcome && <Welcome departing={intro} prepare={prepareWorld} enter={() => {
         state.set({ rail: null, view: "solar_system" });
         if (matchMedia("(prefers-reduced-motion: reduce)").matches) state.set({ welcome: false });
         else {

@@ -46,7 +46,7 @@ function cameraClearance(v: Viewer) {
 export default function LunarGlobe(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const viewer = useRef<Viewer | null>(null);
-  const terrain = useRef<CesiumTerrainProvider | null>(null);
+  const terrain = useRef<ReturnType<typeof withPolarTerrain> | null>(null);
   const previousTime = useRef(useScout.getState().time);
   const cameraFlying = useRef(false);
   const latest = useRef(props);
@@ -256,6 +256,7 @@ export default function LunarGlobe(props: Props) {
       v.canvas.removeEventListener("pointerdown", stopFlight);
       v.canvas.removeEventListener("pointermove", mouseHover);
       v.canvas.removeEventListener("contextmenu", suppressContext);
+      terrain.current?.dispose();
       inputs.destroy();
       v.destroy();
       viewer.current = null;

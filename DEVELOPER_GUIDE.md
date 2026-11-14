@@ -95,3 +95,7 @@ Mission integration is ten-minute resolution. Terrain sampling is finite; local 
 Useful checks: `npm run test:landing-browser` (real API, candidate selection, empty state, stale results and desktop/mobile), `npm run test:browser`, `npm run test:eclipse`, `npm run test:eclipse-browser`, `npm run test:solar`, `npm run test:solar-browser`, `npm run test:terrain`. Live checks require upstream data or existing real-data caches. Existing reports describe their actual scope; interpolation checks are not independent ephemeris certification.
 
 See `BUILD_STATUS.md` for delivery status, `PROJECT_BRIEF.md` for decisions, `DESIGN.md` for visual conventions, and `TODO.md` for pending copy cleanup and live Rocky provider testing.
+
+## Loading and caching
+
+See [PERFORMANCE.md](PERFORMANCE.md) for the measured startup reduction, cache lifetimes, build-time compression and focused verification commands. `npm run build` creates the compressed asset variants; production must serve `dist` through the Node server to use the API and compression/cache policies.

@@ -512,42 +512,31 @@ export default function SolarSystem({
     const packets = { ...(monthlyCache.get(month) || {}) },
       errors: any = {};
     setLoad({ month, packets: { ...packets }, errors: {}, loading: true });
-    (async () => {
-      for (const id of solarLoadOrder) {
-        if (!alive) break;
+    const controller = new AbortController();
+    let next = 0;
+    const worker = async () => {
+      while (alive && next < solarLoadOrder.length) {
+        const id = solarLoadOrder[next++];
         if (packets[id]) continue;
         try {
-          const p = await jsonFetch(
-            "/api/solar/" +
-              id +
-              "?time=" +
-              encodeURIComponent(month + "-01T00:00:00.000Z"),
-          );
-          if (!alive) break;
+          const p = await jsonFetch("/api/solar/" + id + "?time=" +
+            encodeURIComponent(month + "-01T00:00:00.000Z"), { signal: controller.signal });
+          if (!alive) return;
           packets[id] = p;
+          monthlyCache.delete(month);
           monthlyCache.set(month, { ...packets });
+          while (monthlyCache.size > 6) monthlyCache.delete(monthlyCache.keys().next().value!);
         } catch (e) {
+          if (!alive) return;
           errors[id] = e.message;
         }
-        if (alive)
-          setLoad({
-            month,
-            packets: { ...packets },
-            errors: { ...errors },
-            loading: true,
-          });
+        if (alive) setLoad({ month, packets: { ...packets }, errors: { ...errors }, loading: true });
       }
-      if (alive)
-        setLoad({
-          month,
-          packets: { ...packets },
-          errors: { ...errors },
-          loading: false,
-        });
-    })();
-    return () => {
-      alive = false;
     };
+    void Promise.all([worker(), worker()]).then(() => {
+      if (alive) setLoad({ month, packets: { ...packets }, errors: { ...errors }, loading: false });
+    });
+    return () => { alive = false; controller.abort(); };
   }, [month, retry, state.view]);
   const packets = load.month === month ? load.packets : {},
     body = SOLAR_BODIES.find((b) => b.id === selected),
