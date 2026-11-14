@@ -26,7 +26,8 @@
   isolation: isolate;
 }
 .mission-welcome:focus { outline: none; }
-.mission-welcome--departing { pointer-events: none; overflow: hidden; animation: welcome-depart var(--entry-duration) linear both; }
+.mission-welcome { transform: translate3d(0, calc(var(--welcome-progress, 0) * -100%), 0); }
+.mission-welcome[data-scroll-started] { will-change: transform; }
 .mission-welcome__space {
   position: absolute;
   inset: 0;
@@ -120,31 +121,23 @@
 .mission-welcome__tagline { font-size: 32px; margin-top: 12px !important; }
 .mission-welcome__description { max-width: 710px; margin-top: 38px !important; font-size: 32px; }
 .mission-welcome__scroll-hint {
-  display: grid;
-  grid-template-columns: 28px auto;
-  column-gap: 12px;
-  row-gap: 5px;
-  justify-content: start;
+  display: flex;
   align-items: center;
+  gap: 8px;
   margin-top: 40px;
-  color: #fff;
-  font-size: 15px;
+  color: #b6bec8;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .2em;
   line-height: 1.5;
+  opacity: .24;
+  pointer-events: none;
   user-select: none;
+  animation: welcome-hint-retire 8s ease-out forwards;
+  transition: opacity 180ms ease-out;
 }
-.mission-welcome__scroll-hint svg {
-  grid-row: span 2;
-  opacity: .8;
-  animation: welcome-scroll-cue 2s ease-in-out infinite;
-}
-.mission-welcome__scroll-touch { display: none; }
-.mission-welcome__scroll-key { grid-column: 2; color: #aaa; font-size: 12px; }
-.mission-welcome__content { transform: translateY(calc(var(--entry-progress, 0) * -12px)); transition: transform 160ms ease-out; }
-@media (pointer: coarse) {
-  .mission-welcome__scroll-desktop, .mission-welcome__scroll-key { display: none; }
-  .mission-welcome__scroll-touch { display: inline; }
-  .mission-welcome__scroll-hint svg { grid-row: 1; }
-}
+.mission-welcome__scroll-hint svg { opacity: .65; }
+.mission-welcome[data-scroll-started] .mission-welcome__scroll-hint { animation: none; opacity: 0; }
 .mission-welcome :is(a,button):focus-visible { outline-color: #fff; }
 .mission-welcome__credits {
   display: flex;
@@ -177,7 +170,7 @@
   .mission-welcome h1 { font-size: clamp(37px, 10vw, 51px); }
   .mission-welcome__tagline { font-size: 23px; line-height: 1.3 !important; margin-top: 16px !important; }
   .mission-welcome__description { font-size: 20px; line-height: 1.5 !important; margin-top: 28px !important; }
-  .mission-welcome__scroll-hint { margin-top: 30px; font-size: 14px; }
+  .mission-welcome__scroll-hint { margin-top: 30px; font-size: 10px; }
   .mission-welcome__credits { align-items: flex-start; gap: 16px; padding: 16px 0 0; }
   .mission-welcome__nasa { padding: 8px; }
   .mission-welcome__nasa img { width: 64px; }
@@ -197,26 +190,18 @@
   .mission-welcome__credits { padding-bottom: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* The requested always-on ambient scene is scoped separately from app motion. */
-  .mission-welcome--ambient:not(.mission-welcome--departing) :is(.mission-welcome__stars,.mission-welcome__astronaut,.mission-welcome__light,.mission-welcome__glow,.mission-welcome__float,.mission-welcome__credits) { animation: var(--ambient-animation) !important; }
-  .mission-welcome--ambient:not(.mission-welcome--departing) :is(.mission-welcome__float,.mission-welcome__credits):focus-within { animation-play-state: paused !important; }
-  .mission-welcome__scroll-hint svg { animation: none; }
-  .mission-welcome--departing, .mission-welcome--departing *, .app--entering .world,
-  .app--entering :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls) { animation: none !important; }
+  /* Preserve the requested ambient artwork; entry follows input without inertia. */
+  .mission-welcome--ambient :is(.mission-welcome__stars,.mission-welcome__astronaut,.mission-welcome__light,.mission-welcome__glow,.mission-welcome__float,.mission-welcome__credits) { animation: var(--ambient-animation) !important; }
+  .mission-welcome--ambient :is(.mission-welcome__float,.mission-welcome__credits):focus-within { animation-play-state: paused !important; }
 }
 
-/* Separate float and departure layers keep the handoff continuous. */
-.mission-welcome--departing .mission-welcome__space {
-  transform-origin: 65% 45%;
-  will-change: transform, opacity;
-  animation: welcome-image-depart var(--entry-duration) cubic-bezier(.4,0,.2,1) both;
+/* Two adjacent panels share one scroll position, with no timed handoff. */
+.app--entering :is(.world,.solar-labels) {
+  transform: translate3d(0, calc(100dvh - var(--welcome-progress, 0) * 100dvh), 0);
+  will-change: transform;
 }
-.mission-welcome--departing .mission-welcome__content,
-.mission-welcome--departing .mission-welcome__credits { animation: welcome-copy-depart 600ms cubic-bezier(.22,1,.36,1) both; }
-.mission-welcome--departing .mission-welcome__credits { animation-duration: 420ms; }
-.app--entering .world { animation: welcome-scene-arrive var(--entry-duration) cubic-bezier(.22,1,.36,1) both; }
-.app--entering :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls) {
-  animation: welcome-controls-arrive var(--entry-duration) cubic-bezier(.22,1,.36,1) both;
+.app--entering :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls,.solar-labels) {
+  opacity: clamp(0, calc(var(--welcome-progress, 0) * 3 - 2), 1);
 }
 @keyframes welcome-stars-drift {
   0%, 100% { transform: scale(1.08) translate3d(-22px, 14px, 0) rotate(-.45deg); }
@@ -247,30 +232,7 @@
   0%, 100% { transform: translate3d(0, 0, 0); }
   50% { transform: translate3d(3px, -4px, 0); }
 }
-@keyframes welcome-depart {
-  0%, 10% { opacity: 1; transform: translateY(0); }
-  75% { opacity: .85; }
-  100% { opacity: 0; transform: translateY(-100%); }
-}
-@keyframes welcome-copy-depart {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-18px); }
-}
-@keyframes welcome-image-depart {
-  0%, 10% { transform: scale(1); opacity: 1; }
-  55% { opacity: .7; }
-  100% { transform: scale(1.3) translate3d(0,-12px,0); opacity: 0; }
-}
-@keyframes welcome-scene-arrive {
-  0%, 15% { transform: translateY(8vh) scale(1.025); opacity: 0; }
-  85%, 100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-@keyframes welcome-controls-arrive {
-  0%, 58% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-@keyframes welcome-scroll-cue {
-  0%, 100% { transform: translateY(3px); opacity: .5; }
-  50% { transform: translateY(-4px); opacity: 1; }
+@keyframes welcome-hint-retire {
+  0%, 55% { opacity: .24; }
+  100% { opacity: 0; }
 }

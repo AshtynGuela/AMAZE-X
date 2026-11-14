@@ -1093,6 +1093,7 @@ function Scene({
   );
 }
 export default function World(props: {
+  onReady?: () => void;
   inspectorOpen: boolean;
   onHorizonExpand: () => void;
   onContext: (p: any) => void;
@@ -1139,7 +1140,7 @@ export default function World(props: {
             gl.setClearColor("#080d12");
           }}
         >
-          <SpaceBackdrop />
+          <SpaceBackdrop onReady={solar ? props.onReady : undefined} />
           <Suspense fallback={null}>
             {solar ? <SolarCanvasScene /> : <Scene {...props} onBearing={setBearing} onImageState={setSurfaceImage} terrainLighting={terrainLighting} targetBearing={targetBearing} closeUp={polarCloseUp} />}
           </Suspense>

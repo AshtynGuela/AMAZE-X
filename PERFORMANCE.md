@@ -1,6 +1,6 @@
 # Loading optimization — 14 November 2026
 
-The production welcome screen now defers the 3D scene, planet meshes, orbit packets and Rocky until entry. An upward scroll prepares the scene code, while the two-second entry transition overlaps scene startup. Only the current space backdrop loads. Scientific sampling, terrain resolution and source data are unchanged.
+The production welcome screen now defers the 3D scene, planet meshes, orbit packets and Rocky until entry. Pointer intent prefetches the scene code; upward scrolling mounts the map and reveals it continuously once its first background frame is ready. Only the current space backdrop loads. Scientific sampling, terrain resolution and source data are unchanged.
 
 ## Local measurement
 

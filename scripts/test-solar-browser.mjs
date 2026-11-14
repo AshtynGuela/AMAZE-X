@@ -15,9 +15,9 @@ try {
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:5175/");
-  await expect(page.getByText("Scroll up to explore", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "AMAZE-X", exact: true })).toBeVisible();
   await page.screenshot({ path: dir + "/welcome.png", fullPage: true });
-  await page.mouse.wheel(0, -160);
+  await page.mouse.wheel(0, -720);
   await expect(page.locator(".solar-info summary")).toContainText("8/8 loaded", { timeout: 180000 });
   await expect(page.locator(".solar-world")).toBeVisible();
   await expect(page.locator(".inspector")).toHaveCount(0);

@@ -1,4 +1,4 @@
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import { PerspectiveCamera, SRGBColorSpace, Vector3, type Mesh } from "three";
@@ -7,10 +7,14 @@ import { useScout } from "./store";
 const folder = "/assets/rocky/space/";
 const art = ["solar-system", "earth-moon", "moon"].map(name => folder + name + ".webp");
 
-function SpaceArt() {
+function SpaceArt({ onReady }: { onReady?: () => void }) {
   const view = useScout(s => s.view);
   const texture = useTexture(art[view === "solar_system" ? 0 : view === "overview" ? 1 : 2]);
   texture.colorSpace = SRGBColorSpace;
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => onReady?.());
+    return () => cancelAnimationFrame(frame);
+  }, [texture, onReady]);
   const plane = useRef<Mesh>(null);
   const offset = useRef(new Vector3());
   const size = useThree(s => s.size);
@@ -34,9 +38,9 @@ function SpaceArt() {
   );
 }
 
-export default function SpaceBackdrop() {
+export default function SpaceBackdrop({ onReady }: { onReady?: () => void }) {
   return <>
     <color attach="background" args={["#080d12"]} />
-    <Suspense fallback={null}><SpaceArt /></Suspense>
+    <Suspense fallback={null}><SpaceArt onReady={onReady} /></Suspense>
   </>;
 }

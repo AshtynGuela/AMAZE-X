@@ -63,7 +63,7 @@ import {
   ComparisonBoard,
 } from "./Charts";
 import { APP_NAME } from "../engine/app-actions.mjs";
-import Welcome, { WELCOME_ENTRY_MS } from "./Welcome";
+import Welcome from "./Welcome";
 import { FEATURE_EVENT, type ActionResult } from "./app-actions";
 import { encodeSession, decodeSession } from "./share.mjs";
 import type { NearbyMission, NearbyPoint, RankedSite } from "./NearbySites";
@@ -141,6 +141,7 @@ export default function App() {
     [dateDraft, setDateDraft] = useState(""),
     [clockEditing, setClockEditing] = useState(false),
     [intro, setIntro] = useState(false),
+    [entryReady, setEntryReady] = useState(false),
     [rockyStarted, setRockyStarted] = useState(false),
     [help, setHelp] = useState(false),
     [sources, setSources] = useState(false),
@@ -149,6 +150,7 @@ export default function App() {
     [ranked, setRanked] = useState<{ center: NearbyPoint; rows: RankedSite[]; mission: NearbyMission } | null>(null),
     snapshot = useRef<() => string>(() => ""),
     menuRef = useRef<HTMLDivElement>(null);
+  const markEntryReady = useCallback(() => setEntryReady(true), []);
   const updateSnapshot = useCallback((fn: () => string) => { snapshot.current = fn; }, []);
   const sites = useMemo(() => [...state.sites, ...state.custom], [state.sites, state.custom]);
   const nativeFeature = useRef<(action:any)=>Promise<ActionResult>>(null);
@@ -342,16 +344,6 @@ export default function App() {
     if (menu)
       menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
   }, [menu]);
-  useEffect(() => {
-    if (!intro) return;
-    const timer = setTimeout(() => {
-      setIntro(false);
-      state.set({ welcome: false });
-    }, WELCOME_ENTRY_MS);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [intro]);
   const rail = (id: string) =>
     state.set({
       rail: state.rail === id ? null : id,
@@ -602,7 +594,6 @@ export default function App() {
       : [];
   return (
     <main
-      style={{ "--entry-duration": `${WELCOME_ENTRY_MS}ms` } as React.CSSProperties}
       data-phone-details={phoneDetails && inspector ? "open" : "closed"}
       className={
         "app" +
@@ -622,6 +613,7 @@ export default function App() {
           }
         >
           <World
+            onReady={markEntryReady}
             inspectorOpen={inspector}
             onHorizonExpand={() => { if (innerWidth <= 1000) setInspector(false); }}
             nearbyPins={ranked?.rows}
@@ -1598,14 +1590,12 @@ export default function App() {
       <Suspense fallback={null}>
         {rockyStarted && !state.welcome && <Rocky snapshot={() => snapshot.current()} hasInspector={inspector && !solar} />}
       </Suspense>
-      {state.welcome && <Welcome departing={intro} prepare={prepareWorld} enter={() => {
-        state.set({ rail: null, view: "solar_system" });
-        if (matchMedia("(prefers-reduced-motion: reduce)").matches) state.set({ welcome: false });
-        else {
-          state.set({ view: "solar_system", focusVersion: state.focusVersion + 1 });
-          setIntro(true);
-        }
-      }} skip={() => { setIntro(false); state.set({ welcome: false }); }} />}
+      {state.welcome && <Welcome ready={intro && entryReady} prepare={prepareWorld} begin={() => {
+        setEntryReady(false);
+        state.set({ rail: null, view: "solar_system", focusVersion: state.focusVersion + 1 });
+        setIntro(true);
+      }} enter={() => { setIntro(false); state.set({ welcome: false }); }}
+        skip={() => { setIntro(false); state.set({ welcome: false }); }} />}
       {menu && (
         <div
           ref={menuRef}
