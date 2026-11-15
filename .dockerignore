@@ -4,6 +4,7 @@
 node_modules
 dist
 .cache
+ROCKETS
 .impeccable
 data/raw
 data/kernels

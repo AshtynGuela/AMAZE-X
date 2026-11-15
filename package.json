@@ -27,6 +27,8 @@
     "test:landing-browser": "node scripts/test-landing-browser.mjs",
     "test:next-window-browser": "node scripts/test-next-window-browser.mjs",
     "test:rocky-motion-browser": "node scripts/test-rocky-motion-browser.mjs",
+    "test:entry-flight-browser": "node scripts/test-entry-flight-browser.mjs",
+    "assets:entry": "node scripts/prepare_entry_assets.mjs",
     "start": "node server/index.mjs --production",
     "test:terrain-remote": "python -m unittest discover -s tests -p \"test_remote*.py\""
   },

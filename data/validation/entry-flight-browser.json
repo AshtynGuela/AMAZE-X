@@ -1,0 +1,12 @@
+{
+  "testedUtc": "2026-11-15T03:13:31.930Z",
+  "base": "http://127.0.0.1:5247",
+  "assetRequests": 2,
+  "initialRocketRequests": 0,
+  "scrollPause": true,
+  "reverseStaging": true,
+  "mobileOverflow": false,
+  "entryControlsRestored": true,
+  "reducedMotionSkips3D": true,
+  "errors": []
+}

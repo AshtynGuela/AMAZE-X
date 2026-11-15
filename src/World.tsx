@@ -1144,6 +1144,9 @@ export default function World(props: {
           }}
           onCreated={({ gl }) => {
             gl.setClearColor("#080d12", solar ? 1 : 0);
+            // The shared starfield is already behind this transparent canvas.
+            // Entry can reveal its first frame without waiting for planet GLBs.
+            if(solar)requestAnimationFrame(()=>props.onReady?.());
           }}
         >
           <SpaceBackdrop onReady={solar ? props.onReady : undefined} />

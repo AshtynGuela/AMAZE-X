@@ -1,0 +1,23 @@
+{
+  "preparation": "User-supplied ROCKETS assets. Source geometry, node rig and material maps retained; embedded PNGs capped at 1024 px, Meshopt with position 16 / UV 14 / normals 12 bits. No decimation or mesh joining.",
+  "records": [
+    {
+      "id": "rocket",
+      "source": "ROCKETS/rocket_integration_package/rocket_integration_ready.glb",
+      "sourceBytes": 24963692,
+      "sourceSha256": "22205b5905ba0cd6aa4458fa811ac26a36c856ef04e9825f829fbadcb5c85db3",
+      "url": "/assets/entry/rocket.glb",
+      "bytes": 4951780,
+      "sha256": "d84b4853403ab00f93c80d06983d169b363dbd0cb6999178047b697324b0b15e"
+    },
+    {
+      "id": "spacecraft",
+      "source": "ROCKETS/spacecraft_animation_bundle/spacecraft_rigged_animated.glb",
+      "sourceBytes": 12651608,
+      "sourceSha256": "f51964f2585ab6953f3ca1099c04f76fc8910e0bd9d9a638d406360acee7d030",
+      "url": "/assets/entry/spacecraft.glb",
+      "bytes": 2991692,
+      "sha256": "fe8ae8a861daf6fa1424f91f06a41723f20b12b619fd71f907fdb17860c327e3"
+    }
+  ]
+}

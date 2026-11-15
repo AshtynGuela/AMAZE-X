@@ -2,6 +2,8 @@
 
 ## Priorities from the challenge evaluation — 15 November 2026
 
+- [x] **Opening flight:** keep the astronaut initially; introduce the supplied rocket on scroll, peel away side boosters, then release the spacecraft toward the Solar System and fade before navigation takes over. Reversing scroll reassembles every stage. Optimized assets total 7.94 MB; no entry-model requests before interaction, demand-only rendering, and reduced-motion bypass. Production desktop/phone/keyboard entry checks passed.
+
 - [x] Current UX pass: smaller header, short panel/chat/dialog transitions, control feedback, and reduced-motion support.
 - [x] Rocky replies: one speech block, no secondary exposition, and consistent Question/Statement endings.
 - [x] Use AMAZE-X in exported report branding and the design document.

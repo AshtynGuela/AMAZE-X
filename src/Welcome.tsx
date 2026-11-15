@@ -1,11 +1,30 @@
-import { useEffect, useRef } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import {entryProgress} from "../engine/entry-flight.mjs";
+import type {FlightDriver} from "./EntryFlight";
 import { APP_NAME, APP_EXPANSION } from "../engine/app-actions.mjs";
 import "./welcome.css";
 
 type Props = { ready: boolean; begin: () => void; enter: () => void; skip: () => void; prepare: () => void };
+const EntryFlight=lazy(()=>import('./EntryFlight'));
+class FlightBoundary extends Component<{onReady:()=>void;children:ReactNode},{failed:boolean}>{
+  state={failed:false};
+  static getDerivedStateFromError(){return {failed:true}}
+  componentDidCatch(){this.props.onReady()}
+  render(){return this.state.failed?null:this.props.children}
+}
 
 export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
   const panel = useRef<HTMLElement>(null);
+  const [flightStarted,setFlightStarted]=useState(false);
+  const [reducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const flightReady=useRef(reducedMotion);
+  const mapStarted=useRef(false);
+  const flight=useRef<FlightDriver>({progress:0,paint:null});
+  const finishPreparation=()=>{
+    flightReady.current=true;
+    if(!mapStarted.current){mapStarted.current=true;latest.current.begin();}
+    wake.current();
+  };
   const latest = useRef({ ready, begin, enter, prepare });
   latest.current = { ready, begin, enter, prepare };
   const drive = useRef<(delta: number, finish?: boolean) => void>(() => {});
@@ -27,10 +46,12 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       const dt = before ? Math.min(48, now - before) : 16;
       before = now;
       // Keep the outgoing page in place until the actual map has a frame ready.
-      const destination = latest.current.ready ? target : Math.min(target, .06);
+      const destination = !flightReady.current ? Math.min(target,.06) : !latest.current.ready ? Math.min(target,.94) : target;
       displayed = reduced ? destination : displayed + (destination - displayed) * (1 - Math.exp(-dt / 55));
       if (Math.abs(destination - displayed) < .0005) displayed = destination;
       root.style.setProperty("--welcome-progress", String(displayed));
+      root.dataset.entryProgress=displayed.toFixed(4);
+      flight.current.progress=displayed;flight.current.paint?.(displayed);
       if (displayed >= .999 && latest.current.ready && !completed) {
         completed = true;
         latest.current.enter();
@@ -48,12 +69,12 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       if (!started && (delta > 0 || finish)) {
         started = true;
         node.dataset.scrollStarted = "true";
-        latest.current.begin();
+        setFlightStarted(true);
+        if(reducedMotion){mapStarted.current=true;latest.current.begin();}
       }
       if (!started) return;
-      const distance = Math.max(360, Math.min(720, node.clientHeight * .75));
-      target = finish ? 1 : Math.max(0, Math.min(1, target + delta / distance));
-      if (target >= .88) target = 1;
+      const distance = Math.max(520, Math.min(1000, node.clientHeight));
+      target = finish ? 1 : entryProgress(target,delta,distance);
       animate();
     };
     const wheel = (event: WheelEvent) => {
@@ -88,6 +109,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     return () => {
       cancelAnimationFrame(frame);
       root.style.removeProperty("--welcome-progress");
+      delete root.dataset.entryProgress;
       drive.current = () => {};
       wake.current = () => {};
       node.removeEventListener("pointermove", warm);
@@ -119,8 +141,8 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     node.focus({ preventScroll: true });
     return () => { observer.disconnect(); previous.forEach((inert, child) => { child.inert = inert; }); };
   }, []);
-  return <section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
-    className="mission-welcome mission-welcome--ambient"
+  return <><section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
+    className="mission-welcome mission-welcome--ambient" data-scene-ready={ready}
     onClick={event => {
       // Credits remain normal links; the rest of the page uses the same reveal
       // as scrolling, including waiting for the map's first rendered frame.
@@ -128,9 +150,11 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       drive.current(0, true);
     }}
     onKeyDown={event => {
-      if (["ArrowUp", "PageUp"].includes(event.key) ||
-          (event.target === event.currentTarget && ["Enter", " "].includes(event.key))) {
-        event.preventDefault(); event.stopPropagation(); drive.current(0, true); return;
+      if (["ArrowUp", "PageUp", "ArrowDown", "PageDown"].includes(event.key)) {
+        event.preventDefault();event.stopPropagation();drive.current((event.key==='ArrowDown'||event.key==='PageDown'?-1:1)*(event.key.startsWith('Page')?220:90));return;
+      }
+      if(event.target===event.currentTarget && ["Enter"," "].includes(event.key)){
+        event.preventDefault();event.stopPropagation();drive.current(0,true);return;
       }
       if (event.key === "Escape") { event.stopPropagation(); skip(); }
       if (event.key !== "Tab") return;
@@ -161,7 +185,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       <p className="mission-welcome__expansion">{APP_EXPANSION}</p>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
-      <span className="sr-only" id="welcome-scroll-hint">Press Enter or Space to explore the Solar System. Scroll up, swipe up, Up Arrow and Page Up also work.</span>
+      <span className="sr-only" id="welcome-scroll-hint">Scroll or swipe up to launch. Scroll back to reassemble. Arrow Up and Down step through the flight. Enter or Space enters the Solar System. Escape skips the introduction.</span>
       </div>
     </div>
     <footer className="mission-welcome__credits" aria-label="Credits">
@@ -171,5 +195,9 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
         <a className="mission-welcome__challenge" href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/" target="_blank" rel="noreferrer">For the NASA Space Apps Challenge</a>
       </div>
     </footer>
-  </section>;
+  </section>
+  {flightStarted&&!reducedMotion&&<FlightBoundary onReady={finishPreparation}><Suspense fallback={null}>
+    <EntryFlight driver={flight} onReady={finishPreparation}/>
+  </Suspense></FlightBoundary>}
+  </>;
 }

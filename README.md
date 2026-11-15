@@ -4,6 +4,8 @@
 
 Latest UX, terrain preview, independent skyline checks and Rocky comparison improvements: [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md).
 
+The opening keeps the astronaut artwork, then introduces a scroll-controlled 3D launch. Scroll up to peel away the side boosters, release the spacecraft and reveal the Solar System; scroll back before entry completes to reassemble. Arrow keys step through the flight, Enter/Space completes entry, and Escape skips it. Reduced motion omits the 3D launch. Models load on entry intent, render only when progress/viewport changes, and are removed when navigation takes over. The optimized assets and original-source hashes are in `public/assets/entry/assets.json`. Regenerate them from the local `ROCKETS` folder with `npm run assets:entry`; the original models are not needed in the deployed container. Verify with `npm run test:entry-flight-browser` against the running app (`BASE_URL` selects its origin).
+
 A separate browser app for the [NASA Space Apps Lunar Landing Site Navigator challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/). The core workflow is site + landing date + mission duration → Sun/Earth state, terrain obstruction, events and comparison. The existing Rocky Electron overlay is separate.
 
 See [BUILD_STATUS.md](BUILD_STATUS.md) for this build's delivered features, completed checks and remaining work.
