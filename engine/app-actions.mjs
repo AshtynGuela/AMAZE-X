@@ -2,7 +2,7 @@ import { z } from "zod";
 import { MISSION_PROFILES } from "./mission-history.mjs";
 
 export const APP_NAME = "AMAZE-X";
-export const APP_EXPANSION = "Autonomous Moon Approach Zone Exploration - Xplorer";
+export const APP_EXPANSION = "Advanced Moon Analysis & Zone Evaluation — Xplorer";
 export const VIEWS = ["solar_system", "overview", "globe", "polar_south", "polar_north", "horizon", "surface"];
 export const BODIES = ["sun", "mercury", "venus", "earth", "moon", "mars", "jupiter", "saturn", "uranus", "neptune"];
 export const VIEW_LABELS = {solar_system:"Solar System",overview:"Earth–Moon",globe:"Moon",polar_south:"South pole",polar_north:"North pole",horizon:"Observer horizon",surface:"Terrain flyover"};

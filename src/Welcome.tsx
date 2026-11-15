@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { APP_NAME, APP_EXPANSION } from "../engine/app-actions.mjs";
 import "./welcome.css";
 
 type Props = { ready: boolean; begin: () => void; enter: () => void; skip: () => void; prepare: () => void };
@@ -156,7 +157,8 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     </div>
     <div className="mission-welcome__content">
       <div className="mission-welcome__float">
-      <h1 id="welcome-title" aria-label="AMAZE-X"><span className="mission-welcome__wordmark">AMAZE</span><span data-node-id="23:120" className="mission-welcome__x" aria-hidden="true"><img src="/assets/welcome/x-glass.svg" alt="" width="49" height="53" /></span></h1>
+      <h1 id="welcome-title" aria-label={APP_NAME}><span className="mission-welcome__wordmark">AMAZE</span><span data-node-id="23:120" className="mission-welcome__x" aria-hidden="true"><img src="/assets/welcome/x-glass.svg" alt="" width="49" height="53" /></span></h1>
+      <p className="mission-welcome__expansion">{APP_EXPANSION}</p>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
       <span className="sr-only" id="welcome-scroll-hint">Press Enter or Space to explore the Solar System. Scroll up, swipe up, Up Arrow and Page Up also work.</span>

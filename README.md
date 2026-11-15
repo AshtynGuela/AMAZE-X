@@ -1,6 +1,6 @@
 # AMAZE-X
 
-**Autonomous Moon Approach Zone Exploration - Xplorer**
+**Advanced Moon Analysis & Zone Evaluation — Xplorer**
 
 A separate browser app for the [NASA Space Apps Lunar Landing Site Navigator challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/). The core workflow is site + landing date + mission duration → Sun/Earth state, terrain obstruction, events and comparison. The existing Rocky Electron overlay is separate.
 
