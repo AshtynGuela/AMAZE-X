@@ -2,7 +2,7 @@
 
 ## Priorities from the challenge evaluation — 15 November 2026
 
-- [x] **Opening flight:** keep the astronaut initially; introduce the supplied rocket on scroll, peel away side boosters, then release the spacecraft toward the Solar System and fade before navigation takes over. Reversing scroll reassembles every stage. Optimized assets total 7.94 MB; no entry-model requests before interaction, demand-only rendering, and reduced-motion bypass. Production desktop/phone/keyboard entry checks passed.
+- [x] **Opening flight:** the original scrubbed intro has been replaced by an automatic cutscene after an upward scroll/swipe or click. Fade to stars, rocket ascent, boosters and shuttle separation, then upward departure with a Solar System fade. Optimized assets total 7.94 MB; reduced motion bypasses the models. See ENTRY_FLIGHT.md for current and historical verification.
 
 - [x] Current UX pass: smaller header, short panel/chat/dialog transitions, control feedback, and reduced-motion support.
 - [x] Rocky replies: one speech block, no secondary exposition, and consistent Question/Statement endings.

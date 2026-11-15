@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import {entryProgress} from "../engine/entry-flight.mjs";
+import {cutsceneProgress} from "../engine/entry-flight.mjs";
 import type {FlightDriver} from "./EntryFlight";
 import { APP_NAME, APP_EXPANSION } from "../engine/app-actions.mjs";
 import "./welcome.css";
@@ -34,7 +34,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     if (!node) return;
     const root = node.parentElement!;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let target = 0, displayed = 0, frame = 0, before = 0;
+    let displayed = 0, frame = 0, before = 0;
     let started = false, completed = false, prepared = false, touchY: number | null = null;
     const warm = () => {
       if (prepared) return;
@@ -43,12 +43,9 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     };
     const tick = (now: number) => {
       frame = 0;
-      const dt = before ? Math.min(48, now - before) : 16;
+      const dt = before && !document.hidden ? now-before : 0;
       before = now;
-      // Keep the outgoing page in place until the actual map has a frame ready.
-      const destination = !flightReady.current ? Math.min(target,.06) : !latest.current.ready ? Math.min(target,.94) : target;
-      displayed = reduced ? destination : displayed + (destination - displayed) * (1 - Math.exp(-dt / 55));
-      if (Math.abs(destination - displayed) < .0005) displayed = destination;
+      displayed=cutsceneProgress(displayed,dt,flightReady.current,latest.current.ready,reduced);
       root.style.setProperty("--welcome-progress", String(displayed));
       root.dataset.entryProgress=displayed.toFixed(4);
       flight.current.progress=displayed;flight.current.paint?.(displayed);
@@ -57,29 +54,28 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
         latest.current.enter();
         return;
       }
-      if (Math.abs(destination - displayed) > .0001) frame = requestAnimationFrame(tick);
+      if(started&&!completed)frame=requestAnimationFrame(tick);
     };
     const animate = () => {
-      if (!frame && !completed) { before = 0; frame = requestAnimationFrame(tick); }
+      if (started&&!frame && !completed) { before = 0; frame = requestAnimationFrame(tick); }
     };
     wake.current = animate;
     drive.current = (delta, finish = false) => {
-      if (completed) return;
+      if (completed||started) return;
       warm();
       if (!started && (delta > 0 || finish)) {
         started = true;
         node.dataset.scrollStarted = "true";
+        root.dataset.entryCutscene="true";
         setFlightStarted(true);
         if(reducedMotion){mapStarted.current=true;latest.current.begin();}
       }
       if (!started) return;
-      const distance = Math.max(520, Math.min(1000, node.clientHeight));
-      target = finish ? 1 : entryProgress(target,delta,distance);
       animate();
     };
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-      if (event.deltaY >= 0 && target === 0) return;
+      if (event.deltaY >= 0 && !started) return;
       event.preventDefault();
       const pixels = -event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1);
       drive.current(pixels);
@@ -93,7 +89,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       const y = event.touches[0].clientY, delta = touchY - y;
       touchY = y;
       const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
-      if (target === 0 && (!atBottom || delta <= 0)) return;
+      if (!started && (!atBottom || delta <= 0)) return;
       event.preventDefault();
       drive.current(delta);
     };
@@ -110,6 +106,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       cancelAnimationFrame(frame);
       root.style.removeProperty("--welcome-progress");
       delete root.dataset.entryProgress;
+      delete root.dataset.entryCutscene;
       drive.current = () => {};
       wake.current = () => {};
       node.removeEventListener("pointermove", warm);
@@ -185,7 +182,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       <p className="mission-welcome__expansion">{APP_EXPANSION}</p>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
-      <span className="sr-only" id="welcome-scroll-hint">Scroll or swipe up to launch. Scroll back to reassemble. Arrow Up and Down step through the flight. Enter or Space enters the Solar System. Escape skips the introduction.</span>
+      <span className="sr-only" id="welcome-scroll-hint">Scroll up, swipe up, click, or press Enter to launch the short introduction. Escape skips it.</span>
       </div>
     </div>
     <footer className="mission-welcome__credits" aria-label="Credits">
@@ -196,6 +193,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       </div>
     </footer>
   </section>
+  {flightStarted&&<div className="welcome-cutscene-stars" aria-hidden="true"/>}
   {flightStarted&&!reducedMotion&&<FlightBoundary onReady={finishPreparation}><Suspense fallback={null}>
     <EntryFlight driver={flight} onReady={finishPreparation}/>
   </Suspense></FlightBoundary>}

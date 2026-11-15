@@ -26,8 +26,13 @@
   isolation: isolate;
 }
 .mission-welcome:focus { outline: none; }
-.mission-welcome { transform: translate3d(0, calc(var(--welcome-progress, 0) * -100%), 0); }
-.mission-welcome[data-scroll-started] { will-change: transform; }
+.mission-welcome { opacity: 1; transition: opacity 420ms ease; }
+.mission-welcome[data-scroll-started] { opacity: 0; pointer-events: none; }
+.welcome-cutscene-stars {
+  position: absolute; inset: 0; z-index: 88; pointer-events: none;
+  background: #000 url('/assets/site-ui/starfield.png') center / cover no-repeat;
+  opacity: clamp(0,calc((1 - var(--welcome-progress,0)) / .36),1);
+}
 .welcome-flight {
   position: absolute;
   inset: 0;
@@ -216,13 +221,13 @@
   .mission-welcome--ambient :is(.mission-welcome__float,.mission-welcome__credits):focus-within { animation-play-state: paused !important; }
 }
 
-/* Two adjacent panels share one scroll position, with no timed handoff. */
+/* A single short flight bridges the welcome artwork and the map. */
 .app--entering :is(.world,.solar-labels) {
-  transform: translate3d(0, calc(100dvh - var(--welcome-progress, 0) * 100dvh), 0);
-  will-change: transform;
+  transform: none;
+  opacity: clamp(0,calc((var(--welcome-progress,0) - .62) / .34),1);
 }
-.app--entering :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls,.solar-labels) {
-  opacity: clamp(0, calc(var(--welcome-progress, 0) * 3 - 2), 1);
+.app[data-entry-cutscene] :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls,.inspector,.lunar-cursor,.lunar-orbit-nav) {
+  opacity: clamp(0,calc((var(--welcome-progress,0) - .88) / .12),1);
 }
 @keyframes welcome-stars-drift {
   0%, 100% { transform: scale(1.08) translate3d(-22px, 14px, 0) rotate(-.45deg); }
