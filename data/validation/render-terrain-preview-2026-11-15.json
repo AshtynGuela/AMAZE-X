@@ -1,0 +1,20 @@
+{
+  "testedUtc": "2026-11-15T02:32:43.073Z",
+  "base": "https://lu-see.onrender.com",
+  "lat": 89.81671,
+  "lon": 41.24153,
+  "requestedQuality": "preview",
+  "scope": "First request for this coordinate in this run; existing service and raster caches retained. HTTP 202 never counted as ready.",
+  "passed": true,
+  "readyMs": 2595.5177,
+  "warmMs": 71.63719999999967,
+  "pendingResponses": 2,
+  "statuses": [
+    202,
+    200
+  ],
+  "quality": "preview",
+  "rays": 72,
+  "resolutionM": 3790.416,
+  "calculationSeconds": 0.594
+}

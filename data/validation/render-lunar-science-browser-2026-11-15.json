@@ -1,0 +1,25 @@
+{
+  "testedUtc": "2026-11-15T02:33:56.829Z",
+  "base": "https://lu-see.onrender.com",
+  "realApi": true,
+  "rockyRenderingExcluded": true,
+  "twoSiteComparison": "Plan A gives 10 min more sunlight than plan B. The plans offer about the same Earth visibility.",
+  "zeroDirectPowerInTotality": true,
+  "modesPreserveReadings": true,
+  "csvAndJsonDownloaded": true,
+  "missionTimeBasisPreserved": true,
+  "keyboardPlanner": {
+    "focusEntry": true,
+    "tabWrap": true,
+    "escape": true,
+    "focusRestored": true
+  },
+  "mobileInspectorOpenClose": true,
+  "mobile": {
+    "width": 390,
+    "scrollWidth": 390
+  },
+  "visualCaptures": false,
+  "physicalPhoneTested": false,
+  "errors": []
+}

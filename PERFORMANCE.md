@@ -1,6 +1,6 @@
 # Terrain preview update — 15 November 2026
 
-Custom coordinates now use a bundled numerical NASA preview before detailed remote reads: 72 → 180 → 720 rays. Local first ready result measured 0.836 s, worker calculation 0.160 s; the older actual Render baseline was 28.04 s. These are different preview tiers and hosts, not equal-resolution timings. See [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md) for current hosted results, methodology and reproduction. Late responses cannot downgrade terrain quality; shared NASA raster blocks and coordinate jobs reuse work.
+Custom coordinates now use a bundled numerical NASA preview before detailed remote reads: 72 → 180 → 720 rays. On the actual Render service, the first ready preview improved from 28.04 s to 2.596 s (71.64 ms warm); the new result is a coarse 72-ray / 3.79 km preview. Local first ready result measured 0.836 s. These are different preview tiers, not equal-resolution horizon timings. See [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md) for methodology and reproduction. Late responses cannot downgrade terrain quality; shared NASA raster blocks and coordinate jobs reuse work.
 
 # Loading optimization — 14 November 2026
 

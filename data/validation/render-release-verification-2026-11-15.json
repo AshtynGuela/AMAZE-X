@@ -1,0 +1,163 @@
+{
+  "verifiedUtc": "2026-11-15T02:33:31.438Z",
+  "base": "https://lu-see.onrender.com",
+  "releaseCommit": "4ac439d8c35e2c596d7406a20a8c3c83bd12a83c",
+  "deployedAssetsMatchLocalBuild": true,
+  "assets": [
+    {
+      "asset": "/assets/index--oogBTzo.js",
+      "sha256": "99cbb57efb4c9f108ee8d448a84a1c5d3d0ce587de441d06470fb443dd25c675",
+      "bytes": 416440
+    },
+    {
+      "asset": "/assets/index-BE8hl1A0.css",
+      "sha256": "07cf1387fa7bb9132606dba33e322b46d2cfd722b83684530bfc8e52decfe423",
+      "bytes": 114765
+    }
+  ],
+  "assistant": [
+    {
+      "case": "comparison",
+      "question": "Compare Apollo 12 and IM-1 for a one-day surface stay starting 2026-11-20T00:00:00Z. Use calculated values, and do not change app settings.",
+      "status": 200,
+      "passed": true,
+      "elapsedMs": 6488.6821,
+      "speech": "Rocky checked Apollo 12 and Odysseus · IM-1 for a one-day stay starting 2026-11-20T00:00:00.000Z. Both sites show 24.00 h of sunlight and 24.00 h of usable direct Earth contact, with 0.00 h of longest darkness. The plans offer about the same sunlight. The plans offer about the same Earth visibility. Statement.",
+      "details": "",
+      "evidenceIds": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5",
+        "f6",
+        "f7",
+        "f8",
+        "f9",
+        "f10",
+        "f11",
+        "f12",
+        "f13"
+      ],
+      "actions": [],
+      "evidence": [
+        {
+          "id": "f1",
+          "label": "Comparison start UTC",
+          "value": "2026-11-20T00:00:00.000Z",
+          "unit": "",
+          "utc": ""
+        },
+        {
+          "id": "f2",
+          "label": "Site trade-off",
+          "value": "The plans offer about the same sunlight. The plans offer about the same Earth visibility.",
+          "unit": "",
+          "utc": ""
+        },
+        {
+          "id": "f3",
+          "label": "Surface duration",
+          "value": "1",
+          "unit": "days",
+          "utc": ""
+        },
+        {
+          "id": "f4",
+          "label": "Site",
+          "value": "Apollo 12",
+          "unit": "",
+          "utc": "",
+          "siteId": "apollo12"
+        },
+        {
+          "id": "f5",
+          "label": "Sunlight during stay",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "apollo12"
+        },
+        {
+          "id": "f6",
+          "label": "Earth above terrain during stay",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "apollo12"
+        },
+        {
+          "id": "f7",
+          "label": "Usable direct Earth contact",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "apollo12"
+        },
+        {
+          "id": "f8",
+          "label": "Longest darkness",
+          "value": "0.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "apollo12"
+        },
+        {
+          "id": "f9",
+          "label": "Site",
+          "value": "Odysseus · IM-1",
+          "unit": "",
+          "utc": "",
+          "siteId": "im1"
+        },
+        {
+          "id": "f10",
+          "label": "Sunlight during stay",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "im1"
+        },
+        {
+          "id": "f11",
+          "label": "Earth above terrain during stay",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "im1"
+        },
+        {
+          "id": "f12",
+          "label": "Usable direct Earth contact",
+          "value": "24.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "im1"
+        },
+        {
+          "id": "f13",
+          "label": "Longest darkness",
+          "value": "0.00",
+          "unit": "h",
+          "utc": "",
+          "siteId": "im1"
+        }
+      ],
+      "model": "Nemotron · OpenRouter"
+    },
+    {
+      "case": "help",
+      "question": "How do I compare two lunar landing sites in this app? Explain the steps only; do not change app settings.",
+      "status": 200,
+      "passed": true,
+      "elapsedMs": 796.7855,
+      "speech": "Pick a site in Landing Sites, click Plan landing, choose your surface duration, then use Manual date or Find possible landing dates and Add to comparison. Repeat for the other site, then click Compare. Results update automatically. Statement.",
+      "details": "",
+      "evidenceIds": [],
+      "actions": [],
+      "evidence": [],
+      "model": "Nemotron · OpenRouter"
+    }
+  ],
+  "passed": true
+}

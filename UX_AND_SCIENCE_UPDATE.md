@@ -12,7 +12,7 @@ Full horizons now refine the three strongest local peaks per mast along each bea
 | --- | --- | --- |
 | Old hosted preview | 28.04 s ready; 65.18 ms warm | Actual Render service, previous commit `dae8170`; existing raster caches retained. |
 | New local first preview | 0.836 s ready; 6.06 ms warm | New coordinate, bundled numerical preview; worker calculation 0.160 s. Includes polling until a real HTTP 200 result; HTTP 202 was not treated as ready. |
-| New hosted preview | Awaiting this release's deployment | Record separately after the new commit is live. |
+| New hosted first preview | 2.596 s ready; 71.64 ms warm | Actual Render service, release `4ac439d`, fresh coordinate; 72 rays / 3.79 km preview. Worker calculation 0.594 s; existing service/raster caches retained. |
 
 These compare the application's first preview tiers, not equal-resolution horizons. Detailed 20 m/regional 5 m results take longer and stay explicitly labelled while refining.
 
@@ -31,6 +31,8 @@ All three pass the predeclared 0.1° review trigger. This is independent impleme
 The original request failed because Nemotron emitted `compare_sites` as a client action and guessed catalogue IDs. A second failure involved valid dates/site names adjacent to sentence punctuation. Explicit comparisons with known sites, a selected stay and an unambiguous date now run the actual science tool before provider prose. Both sites receive scoped evidence. Exact verified date/name variants are repaired without admitting new numbers. Comparisons do not change settings when the request is explanatory.
 
 The live Nemotron acceptance request compares Apollo 12 and IM-1 for one day beginning 20 November 2026 at 00:00 UTC. The latest run passed with 13 facts, both sites' calculated sunlight/Earth-visibility hours, and no actions. A separate live app-help request must name `Plan landing` and `Add to comparison`, and cannot invent a `Run comparison` button. A fixture acceptance test also checks two genuinely different outcomes (zero versus 24 hours), so equal live totals cannot conceal a one-site implementation.
+
+The release is verified at [the hosted app](https://lu-see.onrender.com/). Its HTML references the locally built frontend assets, and fetched JavaScript/CSS SHA256 hashes match the local production build. The hosted comparison endpoint passed in 6.49 s with Nemotron and site-scoped calculated facts; hosted help passed in 0.80 s with the exact control names. Both returned HTTP 200 and no actions. The science browser workflow also passed on the deployed app, including exports and desktop/phone/keyboard checks. Deployment-dashboard access became unavailable during final verification, so these results establish public workload behavior and asset identity rather than a claimed final dashboard status. Evidence: `render-release-verification-2026-11-15.json`, `render-terrain-preview-2026-11-15.json`, and `render-lunar-science-browser-2026-11-15.json` under `data/validation/`.
 
 ## Verification and remaining work
 
