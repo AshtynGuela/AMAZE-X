@@ -1,0 +1,31 @@
+{
+  "verifiedUtc": "2026-11-15T03:16:39.246Z",
+  "base": "https://lu-see.onrender.com",
+  "commit": "1806f47",
+  "publicFrontendMatchesBuild": true,
+  "modelHashesMatchBuild": true,
+  "healthStatus": 200,
+  "assets": [
+    {
+      "asset": "/assets/index-BGWPdEIm.js",
+      "bytes": 418141,
+      "sha256": "b6798bb23fc8d49ad44a684d15c2eb76d57ac16a382698229dd350345f28d2f6"
+    },
+    {
+      "asset": "/assets/index-DRfYC8vT.css",
+      "bytes": 115060,
+      "sha256": "74adbd57f52a1fce664fbaa4ad7e2ebd10afcb13b7550ee968e05f4e18251173"
+    },
+    {
+      "asset": "/assets/entry/rocket.glb",
+      "bytes": 4951780,
+      "sha256": "d84b4853403ab00f93c80d06983d169b363dbd0cb6999178047b697324b0b15e"
+    },
+    {
+      "asset": "/assets/entry/spacecraft.glb",
+      "bytes": 2991692,
+      "sha256": "fe8ae8a861daf6fa1424f91f06a41723f20b12b619fd71f907fdb17860c327e3"
+    }
+  ],
+  "scope": "Production HTML/assets and public health verification. Full scroll, rendering, mobile and reduced-motion browser checks were performed locally on this production build."
+}
