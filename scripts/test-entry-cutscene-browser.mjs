@@ -30,7 +30,8 @@ try{
   await page.close();
   const reduced=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'}),requests=[];
   reduced.on('request',r=>{if(r.url().includes('/assets/entry/'))requests.push(r.url())});
-  await reduced.goto(base);await reduced.getByRole('dialog',{name:'AMAZE-X',exact:true}).click({position:{x:30,y:30}});
+  await reduced.goto(base);await reduced.waitForFunction(()=>document.activeElement?.matches('.mission-welcome'));
+  await reduced.mouse.click(30,30);
   await expect(reduced.locator('.mission-welcome')).toHaveCount(0,{timeout:60000});
   assert.equal(requests.length,0);assert.deepEqual(errors,[]);
   const report={testedUtc:new Date().toISOString(),base,automaticAfterSingleScroll:true,starBackdrop:true,phases:[...phases],mapControlsRestored:true,overlayRemoved:true,clickEntry:true,reducedMotionSkipsModels:true,rockyRenderingExcluded:true,timing:'Real browser clock; actual supplied rocket/spacecraft models rendered',errors};

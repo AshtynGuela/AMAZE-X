@@ -1,0 +1,17 @@
+{
+  "verifiedUtc": "2026-11-15T03:40:34.433Z",
+  "base": "https://lu-see.onrender.com",
+  "commit": "1872f2b",
+  "publicFrontendMatchesBuild": true,
+  "healthStatus": 200,
+  "assets": [
+    {
+      "asset": "/assets/index-CjuYjCX6.js",
+      "sha256": "60fcb813e5109796858025e33b05cb6fbb844962eb3b034b2d7ffc829d625ed0"
+    },
+    {
+      "asset": "/assets/index-ipVZuia4.css",
+      "sha256": "1a2efbee5c38afb997d91387b7638d1a420e9ef2c47a8ea7727193fd2e18ec42"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "testedUtc": "2026-11-15T03:45:18.938Z",
+  "base": "http://127.0.0.1:5248",
+  "automaticAfterSingleScroll": true,
+  "starBackdrop": true,
+  "phases": [
+    "ascent",
+    "departure"
+  ],
+  "mapControlsRestored": true,
+  "overlayRemoved": true,
+  "clickEntry": true,
+  "reducedMotionSkipsModels": true,
+  "rockyRenderingExcluded": true,
+  "timing": "Real browser clock; actual supplied rocket/spacecraft models rendered",
+  "errors": []
+}
