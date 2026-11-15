@@ -151,7 +151,6 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       </div>
     </div>
     <footer className="mission-welcome__credits" aria-label="Credits">
-      <a className="mission-welcome__nasa" href="https://www.nasa.gov/" target="_blank" rel="noreferrer"><img src="/assets/welcome/nasa-insignia.png" width="121" height="102" alt="NASA" /></a>
       <div className="mission-welcome__sources">
         <p><a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noreferrer">NASA/JPL Horizons</a><span aria-hidden="true"> · </span><a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noreferrer">LOLA &amp; LROC</a><span aria-hidden="true"> · </span><a href="https://quickmap.lroc.im-ldi.com/" target="_blank" rel="noreferrer">QuickMap</a></p>
         <a className="mission-welcome__challenge" href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/" target="_blank" rel="noreferrer">For the NASA Space Apps Challenge</a>
