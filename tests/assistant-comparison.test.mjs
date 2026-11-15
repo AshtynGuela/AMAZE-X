@@ -28,9 +28,13 @@ test('comparison calculates both sites before provider prose and returns site-sc
   try {
     globalThis.fetch=async(_url,options)=>{
       const request=JSON.parse(options.body);assert.equal(request.tools,undefined);
+      if(request.messages[0].content.includes('Classify the latest request')) {
+        assert.deepEqual(read,[]);
+        return {ok:true,json:async()=>({choices:[{message:{content:'{"scope":"app"}'}}]})};
+      }
       const facts=JSON.parse(request.messages.findLast(m=>m.content?.startsWith('Verified evidence: ')).content.slice('Verified evidence: '.length));
       const used=facts.filter(f=>f.siteId&&['Site','Sunlight during stay','Earth above terrain during stay'].includes(f.label));
-      return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({speech:used.map(f=>'{{'+f.id+'}}').join('. '),details:'',evidenceIds:used.map(f=>f.id),actions:[]})}}]})};
+      return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({scope:'app',speech:used.map(f=>'{{'+f.id+'}}').join('. '),details:'',evidenceIds:used.map(f=>f.id),actions:[]})}}]})};
     };
     const result=await answerQuestion({question,context:{mastM:2,minAntennaEl:5}}, {
       sites,signal:AbortSignal.timeout(5000),loadTerrain:async()=>({elevationM:0,masks:{'2':Array(720).fill(0)}}),
