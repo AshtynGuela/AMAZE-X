@@ -1,23 +1,7 @@
-@font-face {
-  font-family: "D-DIN";
-  src: url("/assets/fonts/d-din/D-DIN.otf") format("opentype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "D-DIN";
-  src: url("/assets/fonts/d-din/D-DIN-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "D-DIN";
-  src: url("/assets/fonts/d-din/D-DIN-Italic.otf") format("opentype");
-  font-style: italic;
-  font-display: swap;
-}
 :root {
   font-family: "D-DIN", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   color: #edf1e9;
   background: #080d12;
   font-synthesis: none;
@@ -45,7 +29,8 @@ body,
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button,

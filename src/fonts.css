@@ -1,0 +1,53 @@
+@font-face {
+  font-family: "D-DIN";
+  src: url("/assets/fonts/d-din/D-DIN.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DIN.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D-DIN";
+  src: url("/assets/fonts/d-din/D-DIN-Bold.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DIN-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D-DIN";
+  src: url("/assets/fonts/d-din/D-DIN-Italic.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DIN-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D-DIN Expanded";
+  src: url("/assets/fonts/d-din/D-DINExp.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DINExp.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D-DIN Expanded";
+  src: url("/assets/fonts/d-din/D-DINExp-Bold.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DINExp-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D-DIN Expanded";
+  src: url("/assets/fonts/d-din/D-DINExp-Italic.woff2") format("woff2"),
+       url("/assets/fonts/d-din/D-DINExp-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
