@@ -15,7 +15,8 @@ const rawGlobal = path.join(root, "data/raw/ldem_128.img");
 const revision = createHash('sha256').update(await fs.readFile(path.join(root,'public/data/manifest.json')))
   .update(await fs.readFile(path.join(root,'data/terrain-regional.json')))
   .update(await fs.readFile(path.join(root,'scripts/lunar_terrain.py')))
-  .update(await fs.readFile(path.join(root,'scripts/remote_dem.py'))).digest('hex').slice(0,16);
+  .update(await fs.readFile(path.join(root,'scripts/remote_dem.py')))
+  .update(await fs.readFile(path.join(root,'data/terrain/preview.json')).catch(()=>Buffer.alloc(0))).digest('hex').slice(0,16);
 const resultDir = path.join(root,'.cache/terrain-results');
 const failures = new Map();
 const diskReads = new Map();
@@ -72,7 +73,7 @@ export async function terrainAt(lat, lon, retry = false, quality = "full") {
     recent.set(key, terrain);
     if (recent.size > 8) recent.delete(recent.keys().next().value);
     return terrain;
-  }, { priority: quality === "quick" ? 3 : 0, heavy: quality !== "quick" }).catch(error => {
+  }, { priority: quality === "preview" ? 5 : quality === "quick" ? 3 : 0, heavy: quality === "full" }).catch(error => {
     const safe = new Error(error.killed ? 'NASA terrain calculation timed out. Retry after the cache has warmed.' :
       (error.stderr?.trim().split('\n').at(-1) || error.message));
     failures.set(key,{error:safe,until:Date.now()+60000});

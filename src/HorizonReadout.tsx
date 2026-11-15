@@ -75,9 +75,9 @@ export default function HorizonReadout({ site, bearing, imagery, terrainLighting
       </div>
       <p className="horizon-summary">
         {skyline === null ? "Local skyline unavailable" : <>Skyline {degrees(skyline)}{distance(bearing) && ` · terrain ${distance(bearing)} away`}</>}
-        <span>{mast} m mast</span>
+        <span>{mast} m sensor</span>
       </p>
-      {terrain?.quality === "quick" && <p className="data-note">Quick obstruction check · detailed skyline is loading.</p>}
+      {terrain?.quality && terrain.quality !== "full" && <p className="data-note">Terrain preview · refining</p>}
       {(terrain || imagery === "quickmap" || imagery === "regional" || imagery === "regional-imagery") && <div className="horizon-imagery">
         <span role="status">{imagery === "quickmap" ? <a href="https://quickmap.lroc.im-ldi.com/" target="_blank" rel="noreferrer">QuickMap terrain · LROC imagery</a> : closeUp
           ? <a href={closeUp.sourceUrl} target="_blank" rel="noreferrer">{surfaceDetailCredit(closeUp, imagery === "detail")}</a>

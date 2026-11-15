@@ -1,5 +1,7 @@
 # AMAZE-X — challenge evaluation
 
+Follow-up implementation and newer measurements are recorded in [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md). The findings below preserve the original evaluation run.
+
 Evaluated 15 November 2026 against the [official Lunar Landing Site Navigator details](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=details), last published 13 November 2026. Local production build, revision `8dbce6998e51b0369ac20bdec652d62e26e5ccdd`. This assessment changes documentation and test evidence only; it does not fix, push, or deploy application code.
 
 ## Overall assessment

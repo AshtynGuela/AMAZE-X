@@ -1,3 +1,7 @@
+# Terrain preview update — 15 November 2026
+
+Custom coordinates now use a bundled numerical NASA preview before detailed remote reads: 72 → 180 → 720 rays. Local first ready result measured 0.836 s, worker calculation 0.160 s; the older actual Render baseline was 28.04 s. These are different preview tiers and hosts, not equal-resolution timings. See [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md) for current hosted results, methodology and reproduction. Late responses cannot downgrade terrain quality; shared NASA raster blocks and coordinate jobs reuse work.
+
 # Loading optimization — 14 November 2026
 
 The production welcome screen now defers the 3D scene, planet meshes, orbit packets and Rocky until entry. Pointer intent prefetches the scene code; upward scrolling mounts the map and reveals it continuously once its first background frame is ready. Only the current space backdrop loads. Scientific sampling, terrain resolution and source data are unchanged.

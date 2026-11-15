@@ -25,7 +25,7 @@ export const appTools = [
 ];
 
 export function requestedDuration(input, siteId, offered) {
-  const q=String(input.question??"").toLowerCase();
+  const q=String(input.question??"").toLowerCase().replace(/[-‑–]/g," ");
   const words={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
   const durationPattern=/\b(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:earth\s*)?(days?|hours?|weeks?)\b/g;
   const matches=[...q.matchAll(durationPattern)];
@@ -100,15 +100,14 @@ export function createAppToolRunner({input,sites,loadData,loadTerrain,fact,queue
       const ids=z.array(z.string()).min(2).max(4).parse(args.siteIds),iso=time(args.iso);
       if(new Set(ids).size!==ids.length)throw Error("Choose different sites to compare.");
       const duration=requestedDuration(input,ids[0],args.durationDays);
-      const rows=[];
-      // Keep the upstream work bounded; reuse the same scientific functions as the dashboard.
-      for(const id of ids){
+      // At most four sites; independent NASA requests share the existing cache.
+      const rows=await Promise.all(ids.map(async id=>{
         const p=await prepare(id,iso,duration);
         const metrics=summarize(p.data,p.start,duration,p.mask,p.antenna);
         if(!metrics)throw Error("The full mission needs verified Sun and Earth data.");
-        rows.push({id,label:p.selected.name,durationDays:duration,metrics,terrain:!!p.mask});
-      }
-      return {summary:fact("Site trade-off",comparisonTakeaway(rows)),duration:fact("Surface duration",duration,"days"),rows:rows.map(row=>({siteId:row.id,terrain:row.terrain,evidence:[fact("Site",row.label),fact("Sunlight during stay",(row.metrics.sunlitPct*duration*24/100).toFixed(2),"h"),fact("Earth above terrain during stay",(row.metrics.earthVisiblePct*duration*24/100).toFixed(2),"h"),fact("Usable direct Earth contact",(row.metrics.earthDtePct*duration*24/100).toFixed(2),"h"),fact("Longest darkness",row.metrics.longestDarkH.toFixed(2),"h")]})),note:rows.every(row=>row.terrain)?"Terrain included. Earth visibility differs from usable antenna contact.":"Some terrain horizons are unavailable. These rows cannot establish terrain-based viability."};
+        return {id,label:p.selected.name,durationDays:duration,metrics,terrain:!!p.mask};
+      }));
+      return {summary:fact("Site trade-off",comparisonTakeaway(rows)),duration:fact("Surface duration",duration,"days"),rows:rows.map(row=>({siteId:row.id,terrain:row.terrain,evidence:[fact("Site",row.label,"","",row.id),fact("Sunlight during stay",(row.metrics.sunlitPct*duration*24/100).toFixed(2),"h","",row.id),fact("Earth above terrain during stay",(row.metrics.earthVisiblePct*duration*24/100).toFixed(2),"h","",row.id),fact("Usable direct Earth contact",(row.metrics.earthDtePct*duration*24/100).toFixed(2),"h","",row.id),fact("Longest darkness",row.metrics.longestDarkH.toFixed(2),"h","",row.id)]})),note:rows.every(row=>row.terrain)?"Terrain included. Earth visibility differs from usable antenna contact.":"Some terrain horizons are unavailable. These rows cannot establish terrain-based viability."};
     }
     if(name==="find_landing_windows"){
       const id=z.string().parse(args.siteId),departure=time(args.earliestDeparture);

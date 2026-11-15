@@ -1,0 +1,21 @@
+{
+  "testedUtc": "2026-11-15T02:25:27.239Z",
+  "question": "How do I compare two lunar landing sites in this app? Explain the steps only; do not change app settings.",
+  "elapsedMs": 904.932,
+  "passed": true,
+  "result": {
+    "speech": "Pick a site in Landing Sites, click Plan landing, choose your surface duration, then use Manual date or Find possible landing dates and Add to comparison. Repeat for the other site, then click Compare. Results update automatically. Statement.",
+    "details": "",
+    "evidenceIds": [],
+    "actions": [],
+    "evidence": [],
+    "model": "Nemotron · OpenRouter"
+  },
+  "events": [
+    {
+      "event": "model",
+      "model": "OpenRouter",
+      "reply": "{\"speech\": \"Pick a site in Landing Sites, click Plan landing, choose your surface duration, then use Manual date or Find possible landing dates and Add to comparison. Repeat for the other site, then click Compare. Results update automatically.\", \"details\": \"\", \"evidenceIds\": [], \"actions\": []}"
+    }
+  ]
+}

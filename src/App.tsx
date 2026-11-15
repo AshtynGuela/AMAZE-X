@@ -80,7 +80,8 @@ const prepareWorld = () => import("./World");
 const World = lazy(prepareWorld);
 const Rocky = lazy(() => import("./Rocky"));
 const DateSlip = lazy(() => import("./DateSlip"));
-const ScenarioDialog = lazy(() => import("./LandingPlanner"));
+const loadScenarioDialog = () => import("./LandingPlanner");
+const ScenarioDialog = lazy(loadScenarioDialog);
 const NearbySites = lazy(() => import("./NearbySites"));
 class SceneBoundary extends Component<any, { error: string }> {
   state = { error: "" };
@@ -130,6 +131,12 @@ function IconButton({
   );
 }
 export default function App() {
+  const [phoneLayout,setPhoneLayout]=useState(()=>matchMedia("(max-width:760px), (max-width:960px) and (max-height:500px)").matches);
+  useEffect(()=>{
+    const media=matchMedia("(max-width:760px), (max-width:960px) and (max-height:500px)");
+    const update=()=>setPhoneLayout(media.matches);media.addEventListener("change",update);
+    return ()=>media.removeEventListener("change",update);
+  },[]);
   const state = useScout(),
     [siteFilter, setSiteFilter] = useState(""),
     [inspector, setInspector] = useState(true),
@@ -155,6 +162,12 @@ export default function App() {
     snapshot = useRef<() => string>(() => ""),
     menuRef = useRef<HTMLDivElement>(null);
   const markEntryReady = useCallback(() => setEntryReady(true), []);
+  useEffect(()=>{
+    if(phoneDetails){
+      const panel=document.getElementById("site-inspector");
+      if(panel){panel.scrollTop=0;panel.focus({preventScroll:true});}
+    }
+  },[phoneDetails,state.selected]);
   const updateSnapshot = useCallback((fn: () => string) => { snapshot.current = fn; }, []);
   const sites = useMemo(() => [...state.sites, ...state.custom], [state.sites, state.custom]);
   const nativeFeature = useRef<(action:any)=>Promise<ActionResult>>(null);
@@ -270,7 +283,7 @@ export default function App() {
     Math.floor(state.time / DAY),
     activeScenario?.durationDays,
     state.epochVersion,
-    !!terrain,
+    terrain?.elevationM,
     !!state.travel,
     state.welcome,
     solar,
@@ -992,7 +1005,7 @@ export default function App() {
               <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
               <div className="site-settings-fields">
               <label>
-                Sensor height above ground (mast)
+                Sensor height above ground
                 <span className="site-select-field">
                 <select
                   value={state.mastM}
@@ -1075,7 +1088,7 @@ export default function App() {
           {phoneDetails && inspector ? "Close details" : solar ? "Body details" : "Site details"}
         </button>
       </div>
-      <button className="phone-only phone-details-close" aria-label="Close details" onClick={()=>setPhoneDetails(false)}><X size={18}/>Close</button>
+      <button className="phone-only phone-details-close" aria-label="Close details" onClick={()=>{setPhoneDetails(false);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('.view-toolbar button[aria-label="Show inspector"]')?.focus());}}><X size={18}/>Close</button>
       <div className="view-toolbar" aria-label="View controls">
         {[
           [Orbit, "solar_system", "Solar System"],
@@ -1102,10 +1115,13 @@ export default function App() {
         </IconButton>
         {(
           <IconButton
-            label={inspector ? "Hide inspector" : "Show inspector"}
-            onClick={() => setInspector((v) => !v)}
+            label={inspector && (!phoneLayout || phoneDetails) ? "Hide inspector" : "Show inspector"}
+            onClick={() => {
+              if(phoneLayout){setInspector(true);setPhoneDetails(value=>!value);state.set({rail:null,compare:false,timeline:false});}
+              else setInspector(value=>!value);
+            }}
           >
-            {inspector ? (
+            {inspector && (!phoneLayout || phoneDetails) ? (
               <PanelRightClose size={17} />
             ) : (
               <PanelRightOpen size={17} />
@@ -1153,16 +1169,16 @@ export default function App() {
                 : "Elevation pending"}
             </span>
           </div>
-          <div className={"quality " + (terrain && terrain.quality !== "quick" ? "verified" : "limited")}>
+          <div className={"quality " + (terrain && (!terrain.quality || terrain.quality === "full") ? "verified" : "limited")}>
             <span className="quality-dot" />
             {terrain
-              ? `${terrain.quality === "quick" ? "Quick terrain check · refining" : "LOLA terrain"} · ${terrain.resolutionM.toFixed(0)} m grid`
+              ? `${terrain.quality === "preview" ? "Terrain preview · refining" : terrain.quality === "quick" ? "Terrain check · refining" : "Detailed terrain"} · ${terrain.resolutionM.toFixed(0)} m grid`
               : state.loading[key]
-                ? "Loading LOLA terrain"
+                ? "Loading terrain"
                 : packet?.terrainPending
-                  ? "Terrain not included"
+                  ? "Smooth horizon"
                   : "Terrain pending"}
-            {terrain?.quality === "quick" && <button className="text-button" onClick={() => ensureTerrain(site, true)}>Refine terrain</button>}
+            {terrain?.quality && terrain.quality !== "full" && <button className="text-button" onClick={() => ensureTerrain(site, true)}>Refine terrain</button>}
             {!terrain && packet?.terrainPending && !state.loading[key] && (
               <button className="text-button" onClick={() => ensureData(
                 site, state.time, activeScenario?.durationDays || 1, true,
@@ -1191,7 +1207,7 @@ export default function App() {
                       ? (mask ? "Terrain blocks the Sun." : "The Sun is below the smooth horizon.")
                       : current.sun.eclipse.state !== "none"
                         ? "Earth's shadow reduces direct sunlight."
-                        : "Counted as sunlit when at least half of the Sun clears the skyline."}</small>
+                        : "Sun clears the terrain."}</small>
                     <details className="condition-geometry" open={state.mode === "engineer" ? true : undefined}><summary>Position in the sky</summary><dl><dt>Height above level horizon</dt><dd>{deg(current.sun.el)}</dd>
                       <dt>Compass bearing</dt><dd>{deg(current.sun.az)} ({bearing(current.sun.az)})</dd></dl></details>
                   </section>
@@ -1223,9 +1239,6 @@ export default function App() {
                       of solar disc blocked
                     </span>
                   )}
-                  <small>
-                    Opaque Earth-disc geometry; atmosphere excluded.
-                  </small>
                 </p>
                 {state.mode === "engineer" ? (
                   <details className="engineering-readings" open>
@@ -1249,26 +1262,20 @@ export default function App() {
                       <dd>{deg(current.sun.eclipse.separationDeg)}</dd>
                       <dt>Earth range from observer</dt>
                       <dd>{current.earth.distanceKm.toFixed(1)} km</dd>
-                      <dt>Mast above DEM / sphere</dt>
+                      <dt>Sensor height above ground</dt>
                       <dd>{state.mastM} m</dd>
                       <dt>Minimum angle for direct Earth contact</dt>
                       <dd>{state.minAntennaEl}°</dd>
                     </dl>
                     <p className="data-note">
-                      Airless topocentric angles. Terrain mask:{" "}
+                      Skyline samples:{" "}
                       {mask
-                        ? "0.5° azimuth steps, 150 km radius"
-                        : "terrain not included"}
-                      . Sunlight also accounts for geometric Earth occultation.
+                        ? `${terrain?.azStepDeg ?? 360/mask.length}° apart, out to 150 km`
+                        : "smooth horizon"}
+                      . Earth’s shadow is included.
                     </p>
                   </details>
-                ) : (
-                  <p className="data-note">
-                    Positive height means above a level horizon; negative means below.
-                    Terrain can block an object even at positive height. Bearings
-                    run clockwise: north 0°, east 90°, south 180°, west 270°.
-                  </p>
-                )}
+                ) : null}
               </>
             ) : (
               <div className="pending-data">
@@ -1297,7 +1304,6 @@ export default function App() {
                     </button>
                   </>
                 )}
-                <span>No sample measurements are substituted.</span>
               </div>
             )}
             {current && (
@@ -1373,13 +1379,10 @@ export default function App() {
                   </div>
                 </div>
                 <p className="data-note">
-                  Mission-average power index{" "}
-                  {activeScenario.arrayMode || "horizontal"} array, relative to
-                  normal solar incidence at 1 AU.
+                  Average sunlight on a {activeScenario.arrayMode || "horizontal"} panel, compared with direct sunlight at Earth's orbit.
                 </p>
                 <p className="data-note">
-                  Earth-shadow exposure while the Sun clears terrain:{" "}
-                  {m.eclipseHours.toFixed(2)} h. Ten-minute integration.
+                  Time in Earth's shadow: {m.eclipseHours.toFixed(2)} h.
                 </p>
               </>
             ) : (
@@ -1393,6 +1396,8 @@ export default function App() {
             )}
             <button
               className="primary full-width"
+              onPointerEnter={() => void loadScenarioDialog()}
+              onFocus={() => void loadScenarioDialog()}
               onClick={() => state.set({ scenarioDialog: true })}
             >
               <Flag size={16} /> Plan landing <ArrowUpRight size={16} />
@@ -1442,7 +1447,7 @@ export default function App() {
               </a>
             )}
             <button className="text-button" onClick={() => setSources(true)}>
-              Assumptions & provenance
+              Data sources
             </button>
           </div>
         </aside>
@@ -1701,7 +1706,7 @@ export default function App() {
         </div>
       )}
       {state.scenarioDialog && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="modal-backdrop"><section className="scenario-dialog" role="dialog" aria-label="Opening landing planner"><p role="status">Opening landing planner…</p><button onClick={()=>state.set({scenarioDialog:false})}>Cancel</button></section></div>}>
           <ScenarioDialog key={plannerInitial?.requestId??"manual"} initial={plannerInitial} close={() => { setPlannerInitial(null); state.set({ scenarioDialog: false }); }} />
         </Suspense>
       )}
@@ -1773,7 +1778,7 @@ export default function App() {
             </button>
             <p className="data-note">
               Pick a point on the globe to fill latitude and longitude, or enter
-              them below. Map picking is approximate; review before saving.
+              them below before saving.
             </p>
             <label>
               Latitude · north positive
@@ -1869,7 +1874,7 @@ export default function App() {
                 <p>
                   Every Sun/Earth angle comes from the NASA/JPL Horizons
                   observer API at the selected lunar latitude, longitude and
-                  observer altitude. No synthetic ephemerides are substituted.
+                  sensor height.
                 </p>
                 <h3>Geometry</h3>
                 <p>
@@ -1964,12 +1969,6 @@ export default function App() {
                     </li>
                   ))}
                 </ul>
-                <p className="data-note">
-                  Apollo coordinates use published ME/PA DE421 values. Current
-                  Horizons orientation uses its high-precision Mean Earth frame;
-                  small frame realisation differences remain. Confirm results
-                  with mission tools before decisions.
-                </p>
               </>
             )}
           </section>

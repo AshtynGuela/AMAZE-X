@@ -123,7 +123,7 @@ app.get("/api/solar/:id", async (req, res, next) => {
 app.get("/api/terrain", async (req, res, next) => {
   try {
     const { lat, lon } = coords.parse(req.query);
-    const quality = z.enum(["quick", "full"]).parse(req.query.quality ?? "full");
+    const quality = z.enum(["preview", "quick", "full"]).parse(req.query.quality ?? "full");
     const pending = Symbol('pending');
     let timer;
     const terrain = await Promise.race([terrainAt(lat, lon, req.query.retry === '1', quality),
@@ -218,7 +218,7 @@ app.get("/api/ephemeris", async (req, res, next) => {
           : null,
       custom = typeof req.query.siteId === "string" && /^custom-[a-f0-9-]{1,73}$/.test(req.query.siteId),
       terrain = custom ? await terrainAt(lat, lon, false,
-        z.enum(["quick", "full"]).parse(req.query.terrainQuality ?? "full")).catch(() => null) : curated;
+        z.enum(["preview", "quick", "full"]).parse(req.query.terrainQuality ?? "full")).catch(() => null) : curated;
     const result = await ephemeris({
       lat,
       lon,

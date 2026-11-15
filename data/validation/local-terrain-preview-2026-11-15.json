@@ -1,0 +1,20 @@
+{
+  "testedUtc": "2026-11-15T01:50:40.753Z",
+  "base": "http://127.0.0.1:5245",
+  "lat": 89.81421,
+  "lon": 41.23917,
+  "requestedQuality": "preview",
+  "scope": "First request for this coordinate in this run; existing service and raster caches retained. HTTP 202 never counted as ready.",
+  "passed": true,
+  "readyMs": 12411.863200000002,
+  "warmMs": 7.603299999998853,
+  "pendingResponses": 16,
+  "statuses": [
+    202,
+    200
+  ],
+  "quality": "preview",
+  "rays": 72,
+  "resolutionM": 236.901,
+  "calculationSeconds": 11.166
+}

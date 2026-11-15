@@ -645,7 +645,7 @@ export default function LunarGlobe(props: Props) {
       </dl>
       <a href={LUNAR_MAP_SOURCE} target="_blank" rel="noreferrer">QuickMap · LROC</a>
       <button type="button" className="lunar-measurement-help" aria-label="Measurement details" aria-expanded={measurementHelp} onClick={() => setMeasurementHelp(value => !value)}><Info size={14}/></button>
-      {measurementHelp && <div className="lunar-measurement-note">Height is the displayed terrain elevation above a 1,737.4 km lunar sphere. Res is ground metres per screen pixel, rather than the source DEM resolution. Tap terrain to pin a measurement. Source imagery limits close-range detail.</div>}
+      {measurementHelp && <div className="lunar-measurement-note">Tap the ground to pin a point. Height uses the Moon's reference level. Res shows metres per screen pixel; distance is measured from the camera to your point.</div>}
     </div>
     {(state.view === "surface" || state.view === "horizon") && <div className="lunar-view-mode">
       <span>{state.view === "surface" ? "Terrain flyover" : "Observer horizon"}</span>

@@ -41,7 +41,7 @@
 .app button:not(.rocky-fab):not(:disabled):active { scale: .97; }
 .app :is(.action-chips,.rocky-action-results,.comparison-takeaway) { animation: ui-feedback-in 180ms ease-out; }
 @keyframes ui-feedback-in { from { opacity: .35; } to { opacity: 1; } }
-.app dialog[open] { animation: ui-dialog-in 220ms var(--ui-ease) both; }
+.app :is(dialog[open],[role=dialog]:not(.mission-welcome)) { animation: ui-dialog-in 220ms var(--ui-ease) both; }
 .app dialog[open]::backdrop { animation: ui-feedback-in 180ms ease-out; }
 @keyframes ui-dialog-in {
   from { opacity: 0; translate: 0 10px; scale: .99; }
@@ -51,7 +51,7 @@
   .app .inspector { --ui-from-x: 0px; --ui-from-y: 12px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .app :is(.flyout,.inspector,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.context-menu,.horizon-readout,.rocky-conversation,dialog[open]) {
+  .app :is(.flyout,.inspector,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.context-menu,.horizon-readout,.rocky-conversation,dialog[open],[role=dialog]:not(.mission-welcome)) {
     animation: ui-feedback-in 80ms linear !important;
   }
   .ui-presence[data-motion=closed] > * { animation: none !important; opacity: 0; }

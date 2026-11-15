@@ -35,6 +35,7 @@ export const AppAction = z.discriminatedUnion("type", [
 ]);
 
 export const APP_FEATURE_GUIDE = `AMAZE-X features (use the same names as the interface):
+Manual comparison steps: choose a site in Landing Sites, click Plan landing, choose the surface duration, then use Manual date or Find possible landing dates and Add to comparison. Repeat for the other site. The Compare control shows saved plans; their results calculate automatically. Do not instruct users to click an invented Run comparison button.
 Navigation: set_view for Solar System, Earth–Moon, Moon, poles, Observer horizon or Terrain flyover; navigate_body focuses any Solar System body. set_camera offers whole-system, inner-planets, whole-Moon, Earth–Moon orbit, Sun–Earth orbit, Earth, Sun, selected-site, north, horizon, overhead and compass-bearing views.
 Time: set_time changes the UTC clock; set_playback starts/stops playback and changes speed. Moon rotation, lighting and shadows follow that clock.
 Map: set_map_options changes readable/physical scale, coordinate grid, site markers, 3D terrain and historical south-pole sunlight/Earth-visibility layers. set_lunar_options controls Sun lighting, lunar rotation and unlocked camera axis.

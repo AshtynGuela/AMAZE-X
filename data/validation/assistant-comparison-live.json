@@ -1,0 +1,146 @@
+{
+  "testedUtc": "2026-11-15T02:05:00.136Z",
+  "question": "Compare Apollo 12 and IM-1 for a one-day surface stay starting 2026-11-20T00:00:00Z. Use calculated values, and do not change app settings.",
+  "elapsedMs": 2240.3583,
+  "passed": true,
+  "result": {
+    "speech": "Rocky checked both sites for a one-day stay starting 2026-11-20T00:00:00.000Z. Apollo 12 and Odysseus · IM-1 each show 24.00 h of sunlight, 24.00 h of Earth above terrain, 24.00 h of usable direct Earth contact, and zero hours of longest darkness. The plans offer about the same sunlight and about the same Earth visibility. Statement.",
+    "details": "",
+    "evidenceIds": [
+      "f1",
+      "f2",
+      "f3",
+      "f4",
+      "f5",
+      "f6",
+      "f7",
+      "f8",
+      "f9",
+      "f10",
+      "f11",
+      "f12",
+      "f13"
+    ],
+    "actions": [],
+    "evidence": [
+      {
+        "id": "f1",
+        "label": "Comparison start UTC",
+        "value": "2026-11-20T00:00:00.000Z",
+        "unit": "",
+        "utc": ""
+      },
+      {
+        "id": "f2",
+        "label": "Site trade-off",
+        "value": "The plans offer about the same sunlight. The plans offer about the same Earth visibility.",
+        "unit": "",
+        "utc": ""
+      },
+      {
+        "id": "f3",
+        "label": "Surface duration",
+        "value": "1",
+        "unit": "days",
+        "utc": ""
+      },
+      {
+        "id": "f4",
+        "label": "Site",
+        "value": "Apollo 12",
+        "unit": "",
+        "utc": "",
+        "siteId": "apollo12"
+      },
+      {
+        "id": "f5",
+        "label": "Sunlight during stay",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "apollo12"
+      },
+      {
+        "id": "f6",
+        "label": "Earth above terrain during stay",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "apollo12"
+      },
+      {
+        "id": "f7",
+        "label": "Usable direct Earth contact",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "apollo12"
+      },
+      {
+        "id": "f8",
+        "label": "Longest darkness",
+        "value": "0.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "apollo12"
+      },
+      {
+        "id": "f9",
+        "label": "Site",
+        "value": "Odysseus · IM-1",
+        "unit": "",
+        "utc": "",
+        "siteId": "im1"
+      },
+      {
+        "id": "f10",
+        "label": "Sunlight during stay",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "im1"
+      },
+      {
+        "id": "f11",
+        "label": "Earth above terrain during stay",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "im1"
+      },
+      {
+        "id": "f12",
+        "label": "Usable direct Earth contact",
+        "value": "24.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "im1"
+      },
+      {
+        "id": "f13",
+        "label": "Longest darkness",
+        "value": "0.00",
+        "unit": "h",
+        "utc": "",
+        "siteId": "im1"
+      }
+    ],
+    "model": "Nemotron · OpenRouter"
+  },
+  "events": [
+    {
+      "event": "comparison",
+      "siteIds": [
+        "apollo12",
+        "im1"
+      ],
+      "durationDays": 1,
+      "evidenceCount": 13
+    },
+    {
+      "event": "model",
+      "model": "OpenRouter",
+      "reply": "{\"speech\": \"Rocky checked both sites for a one-day stay starting 2026-11-20T00:00:00Z. Apollo 12 and Odysseus · IM-1 each show 24 hours of sunlight, 24 hours of Earth above terrain, 24 hours of usable direct Earth contact, and zero hours of longest darkness. The plans offer about the same sunlight and about the same Earth visibility. Statement.\", \"details\": \"\", \"evidenceIds\": [\"f1\", \"f2\", \"f3\", \"f4\", \"f5\", \"f6\", \"f7\", \"f8\", \"f9\", \"f10\", \"f11\", \"f12\", \"f13\"], \"actions\": []}"
+    }
+  ]
+}

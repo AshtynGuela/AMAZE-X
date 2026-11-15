@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { jsonFetch } from "./json-fetch.mjs";
 export { jsonFetch } from "./json-fetch.mjs";
 import { persist } from "zustand/middleware";
+import { terrainCanReplace, terrainRank } from "../engine/terrain-quality.mjs";
 export type Site = {
   id: string;
   name: string;
@@ -49,7 +50,7 @@ export type Terrain = {
   siteId: string;
   elevationM: number;
   resolutionM: number;
-  quality?: "quick" | "full";
+  quality?: "preview" | "quick" | "full";
   masks: Record<string, number[]>;
   obstructions?: Record<string, { distanceM: number[]; elevationM: number[] }>;
   azStepDeg?: number;
@@ -66,7 +67,7 @@ async function readTerrain(url: string) {
   do {
     const terrain = await jsonFetch(url);
     if (!terrain.pending) return terrain as Terrain;
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 500));
   } while (Date.now() < deadline);
   throw new Error("NASA terrain is still being prepared. Retry in a moment.");
 }
@@ -80,14 +81,19 @@ export function ensureTerrain(site: Site, force = false) {
     ? "/api/terrain?" + new URLSearchParams({ lat: String(site.lat), lon: String(site.lon) })
     : "/api/terrain/" + encodeURIComponent(site.id);
   const custom = site.family === "custom";
-  const request = readTerrain(url + (custom ? "&quality=quick" + (force ? "&retry=1" : "") : "")).then((terrain: Terrain) => {
-    useScout.setState(s => ({
-      terrains: { ...s.terrains, [site.id]: { ...terrain, siteId: site.id } },
-    }));
+  const initialQuality = custom && force && cached ? cached.quality ?? "full" : "preview";
+  const commit = (terrain: Terrain) => useScout.setState(s => terrainCanReplace(s.terrains[site.id],terrain)
+    ? {terrains:{...s.terrains,[site.id]:{...terrain,siteId:site.id}}}:s);
+  const request = readTerrain(url + (custom ? "&quality="+initialQuality + (force ? "&retry=1" : "") : "")).then((terrain: Terrain) => {
+    commit(terrain);
     if (custom && !terrainRefinements.has(site.id)) {
-      const refinement = readTerrain(url + "&quality=full" + (force ? "&retry=1" : "")).then(full => {
-        useScout.setState(s => ({ terrains: { ...s.terrains, [site.id]: { ...full, siteId: site.id } } }));
-      }).catch(() => { /* Keep the explicitly labelled quick result available. */ })
+      const refinement = (async()=>{
+        for(const quality of ["quick","full"]){
+          if(terrainRank({quality})<=terrainRank(terrain))continue;
+          const refined=await readTerrain(url+"&quality="+quality+(force?"&retry=1":""));
+          commit(refined);
+        }
+      })().catch(() => { /* Keep the explicitly labelled preview available. */ })
         .finally(() => terrainRefinements.delete(site.id));
       terrainRefinements.set(site.id, refinement);
     }

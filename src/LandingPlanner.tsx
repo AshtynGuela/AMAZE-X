@@ -29,7 +29,11 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
       setError("The detailed terrain is ready. Run the search again to check its landing windows.");
     }
   }, [terrain, result]);
-  useEffect(() => { first.current?.focus(); }, []);
+  useEffect(() => {
+    const trigger=document.activeElement as HTMLElement;
+    first.current?.focus();
+    return ()=>{if(trigger?.isConnected)trigger.focus();};
+  }, []);
   // A change to any scientific input invalidates the displayed choices immediately.
   useEffect(() => { setJob(null); setResult(null); setChosen(null); setBusy(false); setError(''); },
     [flightProfile, days, startDate, span, profile, state.selected, state.mastM, state.minAntennaEl, manual]);
@@ -195,7 +199,7 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
         <label>Solar array orientation<select value={arrayMode} onChange={e=>setArrayMode(e.target.value)}>
           <option value="horizontal">Horizontal</option><option value="vertical">Vertical, fixed compass direction</option><option value="single_axis">Single-axis tracking · north–south axis</option><option value="tracking">Ideal Sun-tracking</option>
         </select></label>
-        {arrayMode==='vertical' && <label>Array-facing azimuth · degrees clockwise from north<input type="number" min="0" max="360" value={arrayAzimuth} onChange={e=>setArrayAzimuth(+e.target.value)}/></label>}
+        {arrayMode==='vertical' && <label>Panel direction · degrees clockwise from north<input type="number" min="0" max="360" value={arrayAzimuth} onChange={e=>setArrayAzimuth(+e.target.value)}/></label>}
         <p className="data-note">Array orientation determines the mission power index.</p>
       </details>
       {!manual && <button className="primary full-width" onClick={calculate} disabled={busy && !networkError && !error}>
@@ -212,8 +216,8 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
       </p>}
       {(error || networkError) && <p className="error-text" role="alert">{error || networkError}</p>}
       {networkError && job && <button onClick={()=>{setError('');setBusy(true);ensureData(site,job.start,job.span+job.duration,true);}}>Retry current search</button>}
-      {site.family==='custom' && !terrain && !state.loading[key] && <p className="quality limited">LOLA terrain unavailable. Calculations use a smooth horizon.</p>}
-      {terrain?.quality === "quick" && <p className="quality limited">Preliminary terrain screening. The detailed skyline is loading; landing requires the detailed result.</p>}
+      {site.family==='custom' && !terrain && !state.loading[key] && <p className="quality limited">Smooth horizon</p>}
+      {terrain?.quality && terrain.quality !== "full" && <p className="quality limited">Terrain preview · refining</p>}
       {!manual && result && <section className="landing-results" aria-live="polite">
         <h3>{result.cancelled ? 'Search stopped' : result.windows.length ? (result.mode === 'next' ? 'Next matching window found' : `${result.windows.length} candidate ${result.windows.length===1?'window':'windows'}`) : 'No dates meet these limits'}</h3>
         <p className="data-note">{result.matching} of {result.tested} hourly arrival times meet all three limits.</p>
@@ -229,13 +233,13 @@ export default function LandingPlanner({close,initial}: {close: () => void;initi
             <span className="landing-candidate-metrics"><b>{recommended.sunlitPct.toFixed(1)}% sunlight</b><b>{recommended.earthDtePct.toFixed(1)}% contact</b><b>{recommended.longestDarkH.toFixed(1)} h max darkness</b></span>
           </span>
         </label>})}
-        <p className="data-note">Hourly arrivals · NASA/JPL positions · {terrain?.quality === "quick" ? 'Preliminary LOLA screening' : terrain ? 'LOLA terrain' : 'Smooth horizon'}</p>
+        <p className="data-note">Hourly arrival options · {terrain?.quality && terrain.quality !== "full" ? 'Terrain preview' : terrain ? 'Detailed terrain' : 'Smooth horizon'}</p>
       </section>}
       {manual && !live && Number.isFinite(Date.parse(epoch + 'Z')) && <p className="data-note">
         Estimated departure {dateLabel(Date.parse(epoch + 'Z') - timing.flightHours * HOUR)} UTC.
       </p>}
       <footer><button disabled={!manual && chosen===null} onClick={()=>submit(false)}>Add to comparison</button>
-        <button className="primary" disabled={!terrain || terrain.quality === "quick" || (!manual && chosen===null)} onClick={()=>submit(true)}>Travel &amp; land <ArrowUpRight size={16}/></button></footer>
+        <button className="primary" disabled={!terrain || (!!terrain.quality && terrain.quality !== "full") || (!manual && chosen===null)} onClick={()=>submit(true)}>Travel &amp; land <ArrowUpRight size={16}/></button></footer>
     </section>
   </div>;
 }

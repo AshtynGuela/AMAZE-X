@@ -80,15 +80,15 @@
     {
       "site": "im2",
       "elevationM": 5321.88,
-      "minHorizonDeg": -1.47049,
-      "maxHorizonDeg": 4.06309,
+      "minHorizonDeg": -1.46898,
+      "maxHorizonDeg": 4.06527,
       "resolutionM": 20.0
     },
     {
       "site": "shackleton",
       "elevationM": -2788.691,
-      "minHorizonDeg": 19.77048,
-      "maxHorizonDeg": 23.5722,
+      "minHorizonDeg": 19.77129,
+      "maxHorizonDeg": 23.58335,
       "resolutionM": 20.0
     },
     {

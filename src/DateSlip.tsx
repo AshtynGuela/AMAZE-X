@@ -70,7 +70,7 @@ export default function DateSlip({ close }: { close: () => void }) {
   }, [packet, scenario?.id, span, terrain, state.mastM]);
   const values = [
     ["sunlitPct", "Sunlit"],
-    ["earthDtePct", "DTE geometry"],
+    ["earthDtePct", "Earth contact"],
   ];
   return (
     <section className="slip-tray">
@@ -140,12 +140,7 @@ export default function DateSlip({ close }: { close: () => void }) {
           </div>
           <p className="data-note">
             Hover or focus a cell for exact values; click to set the global
-            clock. Brightness indicates availability. Mission integrals use
-            10-minute JPL samples and{" "}
-            {terrain
-              ? "the LOLA horizon"
-              : "a smooth horizon (terrain not included)"}
-            . Pinned scenarios retain their own dates.
+            clock. Brighter cells mean more available time. Saved plans keep their dates.
           </p>
         </>
       ) : (

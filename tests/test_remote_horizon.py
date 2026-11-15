@@ -17,6 +17,30 @@ import remote_dem
 
 
 class PolarHorizonTest(unittest.TestCase):
+    def test_numeric_preview_works_without_remote_reads_and_has_one_height_per_pole(self):
+        with patch.object(terrain,'read_grid',side_effect=AssertionError('Preview contacted a remote raster')):
+            result=terrain.terrain_at(89.1,41,quality='preview')
+            sample,_,_=terrain.elevation_sampler(90,detailed=False)
+            self.assertEqual(float(sample(90,0)),float(sample(90,173)))
+            self.assertEqual(float(sample(-90,0)),float(sample(-90,-91)))
+        self.assertEqual(len(result['masks']['2']),72)
+        self.assertEqual(result['quality'],'preview')
+        self.assertEqual(result['tile']['size'],17)
+        self.assertGreater(result['resolutionM'],3000)
+
+    def test_full_refinement_catches_a_ridge_peak_between_original_distance_steps(self):
+        def sampler(_lat,_sources=None,detailed=True):
+            def elevation(latitude,longitude):
+                d=(90-np.asarray(latitude))*np.pi/180*terrain.RADIUS
+                return 200*np.exp(-((d-12345)/30)**2)
+            return elevation,{'fixture'},{'fixture':{'mapScaleM':20,'product':'fixture'}}
+        with patch.object(terrain,'elevation_sampler',side_effect=sampler):
+            full=terrain.terrain_at(90,0,quality='full')
+            quick=terrain.terrain_at(90,0,quality='quick')
+        self.assertGreater(min(full['masks']['2']),.65)
+        self.assertLess(max(quick['masks']['2']),0)
+        self.assertLess(max(abs(np.array(full['obstructions']['2']['distanceM'])-12345)),30)
+
     def test_polar_projection_cardinals_and_exact_poles(self):
         for north in [False, True]:
             sign = 1 if north else -1

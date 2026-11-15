@@ -30,7 +30,7 @@ def skyline(ray_height, distances, height, mast):
 
 def read_grid(source):
     rows, cols = source["rows"], source["cols"]
-    file = ROOT / "data/raw" / (source["product"] + ".img")
+    file = Path(os.environ.get("LUNAR_TERRAIN_DATA_DIR", ROOT / "data/raw")) / (source["product"] + ".img")
     if os.environ.get("LUNAR_TERRAIN_MODE") != "remote" and file.is_file() and file.stat().st_size == rows * cols * 2:
         return np.memmap(file, dtype="<i2", mode="r", shape=(rows, cols))
     if os.environ.get("LUNAR_TERRAIN_MODE") == "local":
@@ -66,6 +66,28 @@ def forward(lat, lon, az, distance):
 
 
 def elevation_sampler(lat, source_records=None, detailed=True):
+    preview = ROOT / "data/terrain/preview.json"
+    if not detailed and preview.is_file():
+        import gzip
+        import hashlib
+        source = json.loads(preview.read_text())
+        with gzip.open(ROOT / "data/terrain/ldem_8_preview.i16.gz", "rb") as stream:
+            payload = stream.read(source["byteLength"] + 1)
+        if len(payload) != source["byteLength"] or hashlib.sha256(payload).hexdigest() != source["sha256"]:
+            raise ValueError("Numerical terrain preview checksum changed")
+        grid = np.frombuffer(payload, dtype="<i2").reshape(source["rows"],source["cols"])
+        def sample(latitude, longitude):
+            latitude, longitude = np.broadcast_arrays(latitude, longitude)
+            x = longitude % 360 * grid.shape[1] / 360 - .5
+            y = (90 - latitude) * grid.shape[0] / 180 - .5
+            values = bilinear(grid,x,y,wrap=True) * source["scale"]
+            # A pole is one point. Blend the coarsest half-cell into one cap
+            # value instead of giving its longitude several different heights.
+            half_cell = 90 / grid.shape[0]
+            weight = np.clip((np.abs(latitude) - (90 - half_cell)) / half_cell,0,1)
+            pole = np.where(latitude >= 0, grid[0].mean(), grid[-1].mean()) * source["scale"]
+            return values * (1 - weight) + pole * weight
+        return sample, {source["product"]}, {source["product"]:source}
     if source_records is None:
         source_records = json.loads((ROOT / "public/data/manifest.json").read_text())["products"]
     products = {p["product"]: p for p in source_records}
@@ -151,24 +173,48 @@ def elevation_sampler(lat, source_records=None, detailed=True):
 
 def terrain_at(lat, lon, source_records=None, quality="full"):
     started = time.monotonic()
-    elevation, used, products = elevation_sampler(lat, source_records)
+    # First paint uses only the global NASA raster. Reading every 20 m polar
+    # ridge belongs to refinement, not the first useful coordinate result.
+    elevation, used, products = elevation_sampler(lat, source_records, detailed=quality != "preview")
     height = round(float(elevation(lat, lon)), 3)
     resolution = min(products[p]["mapScaleM"] for p in used)
     distances = np.r_[np.arange(5, 500, 5), DISTANCES] if resolution < 20 else DISTANCES
     if quality == "quick":
         distances = np.r_[np.arange(100, 2000, 100), np.arange(2000, 20000, 500), np.arange(20000, 150001, 2000)]
+    if quality == "preview":
+        distances = np.array([250, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 100000, 150000])
     distances = np.unique(distances)
-    bearings = np.radians(np.arange(180) * 2)[:, None] if quality == "quick" else BEARINGS
+    step = 5 if quality == "preview" else 2 if quality == "quick" else .5
+    bearings = np.radians(np.arange(round(360 / step)) * step)[:, None]
     ray_lat, ray_lon = forward(lat, lon, bearings, distances[None, :])
     ray_height = elevation(ray_lat, ray_lon)
+    ray_distances = np.broadcast_to(distances, ray_height.shape)
+    if quality == "full":
+        candidates = []
+        for mast in MASTS:
+            angles = skyline(ray_height, distances, height, mast)
+            local = np.ones(angles.shape, dtype=bool)
+            local[:, 1:] &= angles[:, 1:] >= angles[:, :-1]
+            local[:, :-1] &= angles[:, :-1] >= angles[:, 1:]
+            peaks = np.where(local, angles, -np.inf)
+            indices = np.argpartition(peaks, -3, axis=1)[:, -3:]
+            indices = np.where(np.isfinite(np.take_along_axis(peaks, indices, axis=1)), indices, angles.argmax(axis=1)[:, None])
+            candidates.append(indices)
+        indices = np.concatenate(candidates, axis=1)
+        low = distances[np.maximum(0, indices - 1)]
+        high = distances[np.minimum(len(distances) - 1, indices + 1)]
+        refined_distances = (low[..., None] + (high - low)[..., None] * np.linspace(0, 1, 9)).reshape(len(bearings), -1)
+        refined_heights = elevation(*forward(lat, lon, bearings, refined_distances))
+        ray_distances = np.concatenate([ray_distances, refined_distances], axis=1)
+        ray_height = np.concatenate([ray_height, refined_heights], axis=1)
     masks, obstructions = {}, {}
     for mast in MASTS:
-        angles = skyline(ray_height, distances, height, mast)
+        angles = skyline(ray_height, ray_distances, height, mast)
         peak = angles.argmax(axis=1)
         ray = np.arange(len(peak))
         masks[str(mast)] = angles[ray, peak].round(5).tolist()
         obstructions[str(mast)] = {
-            "distanceM": distances[peak].tolist(),
+            "distanceM": ray_distances[ray, peak].tolist(),
             "elevationM": ray_height[ray, peak].round(2).tolist(),
         }
 
@@ -176,18 +222,21 @@ def terrain_at(lat, lon, source_records=None, quality="full"):
     size, width = (257, 1280) if resolution < 20 else (257 if resolution == 20 else 129, 12000)
     if quality == "quick":
         size = 65
+    elif quality == "preview":
+        size = 17
     axis = np.linspace(-width / 2, width / 2, size)
     east, north = np.meshgrid(axis, axis)
     tile = elevation(*forward(lat, lon, np.arctan2(east, north), np.hypot(east, north)))
     return {
         "lat": lat, "lon": lon, "elevationM": height, "resolutionM": resolution,
-        "azStepDeg": 2 if quality == "quick" else 0.5, "quality": quality, "masks": masks, "obstructions": obstructions,
+        "azStepDeg": step, "quality": quality, "masks": masks, "obstructions": obstructions,
         "sources": [p for name, p in products.items() if name in used],
         "maxDistanceM": int(distances[-1]),
-        "distanceStepsM": [100, 500, 2000] if quality == "quick" else [5, 20, 100, 500] if resolution < 20 else [20, 100, 500],
+        "distanceStepsM": distances.tolist() if quality == "preview" else [100, 500, 2000] if quality == "quick" else [5, 20, 100, 500] if resolution < 20 else [20, 100, 500],
+        "peakRefinement": {"localPeaksPerMast": 3, "subdivisions": 8} if quality == "full" else None,
         "frame": "Mean Earth / Polar Axis",
         "calculationSeconds": round(time.monotonic() - started, 3),
-        "note": "Bilinear PDS LOLA heights with lunar curvature to 150 km. " + ("Preliminary 2 degree / sparse-distance screening; narrow ridges can be missed. Detailed evaluation follows." if quality == "quick" else "Detailed skyline sampled at 0.5 degree bearings."),
+        "note": "Bilinear PDS LOLA heights with lunar curvature to 150 km. " + ("Global terrain preview at 5 degree bearings; detailed polar terrain follows." if quality == "preview" else "Preliminary 2 degree / sparse-distance screening; narrow ridges can be missed. Detailed evaluation follows." if quality == "quick" else "Detailed skyline sampled at 0.5 degree bearings."),
         "tile": {"size": size, "widthM": width, "heightsM": tile.round(2).ravel().tolist()},
     }
 

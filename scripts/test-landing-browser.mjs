@@ -65,12 +65,13 @@ try {
   await page.screenshot({path:shots+'/results-mobile.png'});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.getByRole('button',{name:'Add to comparison',exact:true}).click();
-  await expect(page.getByRole('heading',{name:/Compare landing scenarios/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Compare landing plans/i})).toBeVisible();
   await expect(page.locator('.comparison-values')).not.toContainText('Loading',{timeout:30000});
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('lunar-scouter-v1')).state.scenarios[0]);
   assert.equal(Date.parse(saved.epoch),result.windows[0].best.time);
   assert.equal(saved.flightProfile,DEFAULT_MISSION_PROFILE);
   await page.getByRole('button',{name:'Close comparison'}).click();
+  if(await page.getByRole('button',{name:'Show inspector',exact:true}).count())await page.getByRole('button',{name:'Show inspector',exact:true}).click();
   await expect(page.locator('.mission-verdict')).toContainText('Meets your');
   await page.locator('.inspector').evaluate(e=>e.scrollTop=0);
   await page.screenshot({path:shots+'/dashboard-mobile.png'});

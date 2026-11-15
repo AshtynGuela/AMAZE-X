@@ -249,7 +249,7 @@ export function ComparisonBoard({scenarios}:{scenarios:Scenario[]}) {
   const results=[a,b,c,d];
   return <>
     <p className="comparison-takeaway" role="status">{comparisonTakeaway(scenarios.map((scenario,index)=>({...scenario,metrics:results[index]?.metrics,error:results[index]?.error})))}</p>
-    <p className="comparison-explainer">Earth visibility means Earth is above the terrain skyline. Usable contact also needs to meet your antenna's minimum angle.</p>
+    <p className="comparison-explainer">Compare time in sunlight and time with a clear view of Earth. Contact also uses your antenna's minimum angle.</p>
     <div className="compare-grid">{scenarios.map((scenario,index)=><ScenarioColumn key={scenario.id} scenario={scenario} analysis={results[index]}/>)}</div>
   </>;
 }
@@ -338,7 +338,7 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
         <dd>{m ? `${timeAmount(missionHours(m.sunlitPct,scenario.durationDays))} (${m.sunlitPct.toFixed(1)}%)` : "Loading…"}</dd>
         <dt>Earth above terrain</dt>
         <dd>{m ? `${timeAmount(missionHours(m.earthVisiblePct,scenario.durationDays))} (${m.earthVisiblePct.toFixed(1)}%)` : "—"}</dd>
-        <dt>Usable Earth contact (DTE)</dt>
+        <dt>Usable Earth contact</dt>
         <dd>{m ? `${timeAmount(missionHours(m.earthDtePct,scenario.durationDays))} (${m.earthDtePct.toFixed(1)}%)` : "—"}</dd>
         <dt>Longest darkness</dt>
         <dd>{m ? m.longestDarkH.toFixed(1) + " h" : "—"}</dd>
@@ -356,9 +356,9 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
       )}
       <p className="data-note">
         {state.terrains[scenario.siteId]
-          ? "LOLA terrain horizon"
-          : "Terrain not included"}{" "}
-        · {m ? "10-minute integration" : "Awaiting JPL data"}
+          ? state.terrains[scenario.siteId].quality && state.terrains[scenario.siteId].quality !== "full" ? "Terrain preview" : "Detailed terrain"
+          : "Smooth horizon"}{" "}
+        · {m ? "10-minute steps" : "Loading sky positions"}
       </p>
       {result?.rules?.length > 0 && (
         <ul className="rules">
@@ -381,7 +381,7 @@ export function EventList({ events, time }: { events: any[]; time: number }) {
         return (
           <button
             key={body}
-            title="Terrain-horizon centre crossing; eclipse contacts excluded"
+            title="Jump to the next rise or set above the terrain"
             onClick={() =>
               event && useScout.getState().set({ time: event.time })
             }

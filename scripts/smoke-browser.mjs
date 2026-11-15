@@ -46,7 +46,7 @@ await page
   .getByRole("button", { name: "Add to comparison", exact: true })
   .click();
 await expect(
-  page.getByRole("heading", { name: /Compare landing scenarios/ }),
+  page.getByRole("heading", { name: /Compare landing plans/i }),
 ).toBeVisible();
 await expect(page.locator(".comparison-values")).toContainText("14 days");
 await expect(page.locator(".comparison-values")).not.toContainText("Loading", {
@@ -68,7 +68,7 @@ await page.getByRole("spinbutton", { name: /Longitude/ }).fill("0");
 await page.getByRole("button", { name: "Create site", exact: true }).click();
 const health = await (await page.request.get("http://127.0.0.1:5175/api/health")).json();
 await expect(page.locator(".quality")).toContainText(
-  health.coordinateTerrainReady ? "LOLA terrain" : "Terrain not included",
+  health.coordinateTerrainReady ? /Terrain preview|Terrain check|Detailed terrain/ : "Smooth horizon",
   { timeout: 150000 },
 );
 await page.getByRole("button", { name: "Ask Rocky", exact: true }).click();

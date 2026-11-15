@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "application": "Very Best Lunar Site Scouter",
+  "application": "AMAZE-X",
   "engineVersion": "0.2.0",
-  "exportedUtc": "2026-11-13T01:17:29.525Z",
+  "exportedUtc": "2026-11-15T02:19:52.414Z",
   "challenge": "https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/",
   "site": {
     "id": "apollo11",
@@ -55,7 +55,7 @@
         "el": 69.030342336,
         "radius": 0.9128505555555556,
         "distanceKm": 400345.6621329572,
-        "horizon": 1.1068591945829613,
+        "horizon": 1.1068600805009015,
         "visible": true,
         "dte": true
       },
@@ -63,8 +63,8 @@
       "terrain": true
     },
     "sourceIds": [
-      "42e44e40520f1695159286134541f61660a0c34d6ee1fb2219f75203948c2fba",
-      "c0831107682a15ffee891ba3a8e8943897bd2e045148cdfaf51c8b8aa644eeba"
+      "4f4b5035783259526bc5dfdd7752e1f43e979805a5d12a2def99622aa899c75b",
+      "c6bff6d39f2a54c47694f3fa607ce16df2b116955696c0f59e783b0ed420aa3e"
     ]
   },
   "mission": {
@@ -100,15 +100,15 @@
     },
     "eventScope": "within mission interval",
     "sourceIds": [
-      "42e44e40520f1695159286134541f61660a0c34d6ee1fb2219f75203948c2fba",
-      "c0831107682a15ffee891ba3a8e8943897bd2e045148cdfaf51c8b8aa644eeba"
+      "4f4b5035783259526bc5dfdd7752e1f43e979805a5d12a2def99622aa899c75b",
+      "c6bff6d39f2a54c47694f3fa607ce16df2b116955696c0f59e783b0ed420aa3e"
     ]
   },
   "terrain": {
     "included": true,
     "resolutionM": 236.901,
     "elevationM": -1934.901,
-    "note": "Bilinear LOLA heights; 0.5 degree rays to 150 km; unresolved small obstacles and between-ray ridges can be missed. Apollo coordinates published in DE421 ME/PA; Horizons currently uses high-precision MEAN_ME.",
+    "note": "Bilinear PDS LOLA heights with lunar curvature. Skyline samples use 0.5 degree bearings to 150 km.",
     "sources": [
       {
         "product": "ldem_128",
@@ -128,11 +128,11 @@
       "name": "NASA/JPL Horizons",
       "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C-1.932901%27&START_TIME=%272025-03-14+00%3A00%3A00%27&STOP_TIME=%272025-04-16+00%3A00%3A00%27&STEP_SIZE=%2710m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
       "apiSignature": {
-        "source": "NASA/JPL Horizons API",
-        "version": "1.2"
+        "version": "1.2",
+        "source": "NASA/JPL Horizons API"
       },
-      "sha256": "42e44e40520f1695159286134541f61660a0c34d6ee1fb2219f75203948c2fba",
-      "retrievedUtc": "2026-11-13T00:17:03.145Z",
+      "sha256": "4f4b5035783259526bc5dfdd7752e1f43e979805a5d12a2def99622aa899c75b",
+      "retrievedUtc": "2026-11-15T00:20:21.180Z",
       "frame": "MEAN_ME (high precision)",
       "model": "DE441",
       "refraction": "AIRLESS",
@@ -148,8 +148,8 @@
         "version": "1.2",
         "source": "NASA/JPL Horizons API"
       },
-      "sha256": "c0831107682a15ffee891ba3a8e8943897bd2e045148cdfaf51c8b8aa644eeba",
-      "retrievedUtc": "2026-11-13T00:17:05.163Z",
+      "sha256": "c6bff6d39f2a54c47694f3fa607ce16df2b116955696c0f59e783b0ed420aa3e",
+      "retrievedUtc": "2026-11-15T00:20:25.987Z",
       "frame": "MEAN_ME (high precision)",
       "model": "DE441",
       "refraction": "AIRLESS",

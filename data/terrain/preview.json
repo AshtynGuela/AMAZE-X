@@ -1,0 +1,19 @@
+{
+  "product": "ldem_8_preview",
+  "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_128.img",
+  "labelUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_128.lbl",
+  "sha256": "a945874cde10c75d0c0997f30d21e3694c1cf17500beabcacab14dd484c78a11",
+  "rows": 1440,
+  "cols": 2880,
+  "scale": 0.5,
+  "mapScaleM": 3790.416,
+  "retrievedUtc": "2026-11-12T16:48:05Z",
+  "httpEtag": "\"fd324c812827d31:0\"",
+  "httpLastModified": "Wed, 06 Sep 2017 15:55:04 GMT",
+  "byteLength": 8294400,
+  "sourceProduct": "ldem_128",
+  "sourceSha256": "0e4fea9b863e3255f58de15ccbd2bb8b1e248cb09217fd55d23ed37489f764b4",
+  "nativeSourceResolutionM": 236.901,
+  "access": "Bundled NASA-derived numerical preview",
+  "derivation": "8 pixels/degree; four central source pixels averaged and rounded to one source unit (0.5 m); maximum rounding 0.25 m. Coarse cells are for preview only."
+}

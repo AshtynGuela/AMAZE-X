@@ -2,6 +2,8 @@
 
 **Advanced Moon Analysis & Zone Evaluation — Xplorer**
 
+Latest UX, terrain preview, independent skyline checks and Rocky comparison improvements: [UX_AND_SCIENCE_UPDATE.md](UX_AND_SCIENCE_UPDATE.md).
+
 A separate browser app for the [NASA Space Apps Lunar Landing Site Navigator challenge](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/). The core workflow is site + landing date + mission duration → Sun/Earth state, terrain obstruction, events and comparison. The existing Rocky Electron overlay is separate.
 
 See [BUILD_STATUS.md](BUILD_STATUS.md) for this build's delivered features, completed checks and remaining work.

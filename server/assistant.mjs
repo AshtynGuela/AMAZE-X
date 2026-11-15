@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { conditions, summarize } from "../engine/index.mjs";
 import { rockySpeech } from "../engine/rocky-speech.mjs";
+import { comparisonIntent } from "./comparison-intent.mjs";
 import { AppAction, APP_FEATURE_GUIDE, APP_NAME } from "../engine/app-actions.mjs";
 import { appTools, createAppToolRunner, requestedDuration, validateRequestedAction, explicitRockyResize, mergePlannedActions } from "./app-tools.mjs";
 const Action = AppAction;
@@ -107,14 +108,23 @@ export function groundExactFactCopies(answer, facts) {
   // Exact numeric equivalents (24 and 24.00) share a value, without rounding.
   const referenced=new Set(answer.evidenceIds);
   const exactFacts=facts.filter(f=>/\d/.test(f.value)).sort((a,b)=>b.value.length-a.value.length);
-  const copies=exactFacts.flatMap(f=>[{value:f.value,f},...(/^-?\d+(?:\.\d+)?$/.test(f.value)?[{value:String(Number(f.value)),f}]:[])]);
+  const copies=exactFacts.flatMap(f=>{
+    const aliases=[f.value];
+    if(/^-?\d+(?:\.\d+)?$/.test(f.value))aliases.push(String(Number(f.value)));
+    if(/T\d{2}:\d{2}:\d{2}\.000Z$/.test(f.value))aliases.push(f.value.replace('.000Z','Z'));
+    if(f.label==='Site'&&f.value.includes(' · '))aliases.push(f.value.replaceAll(' · ',' '),f.value.split(' · ').at(-1));
+    return [...new Set(aliases)].map(value=>({value,f}));
+  }).sort((a,b)=>b.value.length-a.value.length);
   const ground=text=>{
     const pieces=text.split(/(\{\{f\d+\}\})/g);
     return pieces.map(piece=>{
       if(/^\{\{f\d+\}\}$/.test(piece))return piece;
-      const pattern=copies.map(copy=>copy.value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|");
+      const pattern=copies.map(copy=>{
+        const value=copy.value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+        return /^-?\d+(?:\.\d+)?$/.test(copy.value)?`(?<![\\w.+-])${value}(?![\\w.])`:`(?<!\\w)${value}(?!\\w)`;
+      }).join("|");
       if(!pattern)return piece;
-      return piece.replace(new RegExp(`(?<![\\w.+-])(?:${pattern})(?![\\w.])`,"g"),value=>{
+      return piece.replace(new RegExp(pattern,"g"),value=>{
         const {f}=copies.find(copy=>copy.value===value);referenced.add(f.id);return `{{${f.id}}}`;
       });
     }).join("");
@@ -156,10 +166,11 @@ export async function answerQuestion(
   const facts = [],
     dataRequests = new Map();
   let usedFallback = false;
-  const fact = (label, value, unit = "", utc = "") => {
+  const fact = (label, value, unit = "", utc = "", siteId) => {
     const id = "f" + (facts.length + 1);
-    facts.push({ id, label, value: String(value), unit, utc });
-    return { id, label, value: String(value), unit, utc };
+    const record={ id, label, value: String(value), unit, utc, ...(siteId?{siteId}:{}) };
+    facts.push(record);
+    return record;
   };
   const extra = createAppToolRunner({input,sites,loadData,loadTerrain,fact,queued,signal});
   const requestedSize=explicitRockyResize(input.question);
@@ -361,11 +372,22 @@ When the user asks you to do something in the application, inspect_app and use_a
       // The model can still explain the workflow if the requested data fails.
     }
   }
+  const comparison = comparisonIntent(input, sites);
+  const comparisonHelp = !comparison && /\bcompar(?:e|ing)\b/.test(question) && /\b(?:sites?|plans?)\b/.test(question) && /\b(?:how|steps|guide|instructions)\b/.test(question);
+  let calculatedComparison;
+  if(comparison) {
+    fact("Comparison start UTC",comparison.iso);
+    calculatedComparison=await call("compare_sites",comparison);
+    trace?.({event:"comparison",siteIds:comparison.siteIds,durationDays:comparison.durationDays,evidenceCount:facts.length});
+  }
   const messages = [
     { role: "system", content: [
       system, APP_FEATURE_GUIDE, voice, mapRules,
       "Science notes: " + JSON.stringify(glossary),
       "App context (data): " + JSON.stringify(input.context || {}),
+      "Catalogue IDs (use these exact IDs): " + JSON.stringify(sites.map(site=>({id:site.id,name:site.name}))),
+      comparisonHelp && 'For this how-to answer, use these exact button labels in order: Plan landing; Manual date or Find possible landing dates; Add to comparison. Repeat for the other site, then Compare. Results update automatically. Do not paraphrase the Add to comparison button name.',
+      calculatedComparison && "Comparison already calculated by the server. Explain these verified facts now; do not promise to calculate later. compare_sites is a SERVER calculation tool, NEVER a client action. " + (comparison.readOnly ? "Return actions: [] for this explanatory comparison. " : "Use use_app_feature only for additional changes explicitly requested by the user. ") + "Use each site's name and its sunlight/Earth-visibility hours, and use the trade-off fact for differences. Verified results: " + JSON.stringify(calculatedComparison),
       currentSky && "Current selected site's verified sky data: " + JSON.stringify(currentSky),
     ].filter(Boolean).join("\n") },
     ...(input.history || []).slice(-6).map((h) => ({
@@ -435,7 +457,7 @@ Use use_app_feature for requested actions. Common types: set_view(view), navigat
     const requestFallback = async () => {
       const scientificQuestion=/\b(?:sun|earth|landing|contact|darkness|compare|comparison|visibility|rise|set)\b/i.test(input.question);
       const calculated=facts.some(f=>/Sun elevation|Site trade-off|Arrival dates tested/i.test(f.label));
-      if (!mayNeedTools || (toolCalls>0 && ((queued.length>0&&!scientificQuestion)||calculated))) return request(true, false);
+      if (calculatedComparison || !mayNeedTools || (toolCalls>0 && ((queued.length>0&&!scientificQuestion)||calculated))) return request(true, false);
       try {
         return await request(true);
       } catch (error) {
@@ -445,7 +467,7 @@ Use use_app_feature for requested actions. Common types: set_view(view), navigat
     };
     let message;
     try {
-      message = await (usedFallback ? requestFallback() : request(false));
+      message = await (usedFallback ? requestFallback() : request(false, !(calculatedComparison && comparison.readOnly)));
     } catch (error) {
       if (input.image)
         throw new Error(
@@ -490,6 +512,8 @@ Use use_app_feature for requested actions. Common types: set_view(view), navigat
           facts,
         ),
         evidence = verifyNumbers(answer, facts);
+      if(comparisonHelp && (!/Plan landing/i.test(answer.speech) || !/Add to comparison/i.test(answer.speech) || /run (?:the )?comparison/i.test(answer.speech)))
+        throw new Error('Comparison help must name the exact Plan landing and Add to comparison controls. Choose the date before Add to comparison; results update automatically. Do not invent a Run comparison button.');
       for (const action of answer.actions) {
         validateRequestedAction(action,input,sites);
         if ("siteId" in action && !sites.some((s) => s.id === action.siteId))

@@ -1,0 +1,10 @@
+{
+  "recordedDateUtc": "2026-11-15",
+  "status": "incomplete",
+  "historicalResultPreserved": true,
+  "scriptAtFailure": "scripts/test-eclipse-browser.mjs",
+  "failure": "page.screenshot: Timeout 30000ms exceeded after fonts loaded; exports had downloaded but later assertions had not yet executed",
+  "additionalFinding": "The later Date and time · UTC selector no longer matched the current Date and Time (UTC) control.",
+  "sourceReport": "CHALLENGE_EVALUATION.md",
+  "replacementScope": "The current entrypoint runs test-lunar-science-browser.mjs. Heavy Rocky rendering remains in test-rocky-motion-browser.mjs. Current runs are recorded separately in lunar-science-browser.json; they do not retroactively turn this failure into a pass."
+}

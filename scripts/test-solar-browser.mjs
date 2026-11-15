@@ -49,7 +49,7 @@ try {
   await expect(page.locator(".inspector")).toBeVisible();
   await expect(page.locator(".body-readings")).toBeVisible({ timeout: 150000 });
   await page.getByRole("button", { name: "Moon", exact: true }).click();
-  await expect(page.locator(".quality")).toContainText("LOLA terrain");
+  await expect(page.locator(".quality")).toContainText("Detailed terrain");
   await page.getByRole("button", { name: "Solar System", exact: true }).click();
   await expect(page.locator(".solar-info summary")).toContainText("8/8 loaded");
   const mobile = await browser.newPage({
