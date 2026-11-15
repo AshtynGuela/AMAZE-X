@@ -64,6 +64,7 @@ import {
   ComparisonForm,
 } from "./Charts";
 import { APP_NAME } from "../engine/app-actions.mjs";
+import { formatSiteScore, siteScore } from "../engine/site-score.mjs";
 import Welcome from "./Welcome";
 import { SiteAsset, SiteBackdrop, SiteWordmark } from "./SiteChrome";
 import "./site-ui.css";
@@ -84,6 +85,7 @@ const DateSlip = lazy(() => import("./DateSlip"));
 const loadScenarioDialog = () => import("./LandingPlanner");
 const ScenarioDialog = lazy(loadScenarioDialog);
 const NearbySites = lazy(() => import("./NearbySites"));
+const SiteAnalysis = lazy(() => import("./SiteAnalysis"));
 const orbitViews = [
   ["earth_moon_orbit", "Earth–Moon orbit"],
   ["solar_orbit", "Sun–Earth orbit"],
@@ -171,6 +173,8 @@ export default function App() {
   const markEntryReady = useCallback(() => setEntryReady(true), []);
   const comparisonTrigger = useRef<HTMLElement | null>(null);
   const nearbyTrigger = useRef<HTMLElement | null>(null);
+  const analysisTrigger = useRef<HTMLElement | null>(null);
+  const [siteEvaluation, setSiteEvaluation] = useState<{ site: Site; plan: Scenario } | null>(null);
   useEffect(()=>{
     if(phoneDetails){
       const panel=document.getElementById("site-inspector");
@@ -212,6 +216,22 @@ export default function App() {
     probeAnalysis = useMetrics((!solar || !!packet) && activeScenario && (inspector || state.rail === "clock") ? probe : undefined),
     eventAnalysis = activeScenario ? probeAnalysis : analysis,
     m = analysis?.metrics;
+  const missionScore = activeScenario && siteScore(m, activeScenario.durationDays);
+  function openSiteAnalysis(target: Site, scenario?: Scenario) {
+    analysisTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const time = scenario?.epoch === "live" ? Math.floor(state.time / HOUR) * HOUR : state.time;
+    setSiteEvaluation({
+      site: target,
+      plan: {
+        ...(scenario ?? { id: "evaluation", siteId: target.id, durationDays: 1 }),
+        epoch: scenario && scenario.epoch !== "live" ? scenario.epoch : new Date(time).toISOString(),
+      },
+    });
+  }
+  function closeSiteAnalysis() {
+    setSiteEvaluation(null);
+    requestAnimationFrame(() => analysisTrigger.current?.focus({ preventScroll: true }));
+  }
   const filteredSites = sites.filter((s) =>
     (s.name + " " + s.region).toLowerCase().includes(siteFilter.toLowerCase()),
   );
@@ -1200,6 +1220,7 @@ export default function App() {
             </IconButton>
           </header>
           <div className="site-quick-actions">
+            <button onClick={() => openSiteAnalysis(site, activeScenario)}>Evaluate landing site</button>
             <button onClick={openComparison}><Columns2 size={16} /> Compare sites or dates</button>
             <button onClick={() => openNearby(site)}>Find better spots nearby</button>
           </div>
@@ -1391,13 +1412,16 @@ export default function App() {
             )}
             {activeScenario && m ? (
               <>
+                {missionScore && <button className="full-width" onClick={() => openSiteAnalysis(site, activeScenario)}>
+                  Site score {formatSiteScore(missionScore.percent)}{(!mask || (terrain?.quality && terrain.quality !== "full")) && " · Preliminary"} <ArrowUpRight size={14} />
+                </button>}
                 {activeScenario.profile && (
                   <p className="mission-verdict">
                     {terrain?.quality === "preview" || terrain?.quality === "quick"
                       ? "Preliminary result. Wait for detailed terrain to check your mission limits."
                       : terrain && analysis?.rules?.length ? (analysis.rules.every((r: any) => r.passed)
                       ? "Meets your sunlight, darkness and contact limits."
-                      : "Does not meet all your mission limits. Open comparison for details.")
+                      : "Does not meet all your mission limits. Open the site score for details.")
                       : "Smooth horizon estimate. Add terrain data to check your mission limits."}
                   </p>
                 )}
@@ -1542,7 +1566,10 @@ export default function App() {
               </IconButton>
             </div>
           </header>
-          {state.scenarios.length > 0 && <ComparisonBoard scenarios={state.scenarios} onInspect={phoneLayout ? () => {
+          {state.scenarios.length > 0 && <ComparisonBoard scenarios={state.scenarios} onEvaluate={scenario => {
+            const location = sites.find(site => site.id === scenario.siteId);
+            if (location) openSiteAnalysis(location, scenario);
+          }} onInspect={phoneLayout ? () => {
             setInspector(true);
             setPhoneDetails(true);
             state.set({ compare: false, rail: null });
@@ -1747,6 +1774,9 @@ export default function App() {
           ))}
         </div>
       )}
+      {siteEvaluation && <Suspense fallback={<div className="modal-backdrop"><p role="status">Opening landing site analysis…</p></div>}>
+        <SiteAnalysis site={siteEvaluation.site} initial={siteEvaluation.plan} close={closeSiteAnalysis} />
+      </Suspense>}
       {state.scenarioDialog && (
         <Suspense fallback={<div className="modal-backdrop"><section className="scenario-dialog" role="dialog" aria-label="Opening landing planner"><p role="status">Opening landing planner…</p><button onClick={()=>state.set({scenarioDialog:false})}>Cancel</button></section></div>}>
           <ScenarioDialog key={plannerInitial?.requestId??"manual"} initial={plannerInitial} close={() => { setPlannerInitial(null); state.set({ scenarioDialog: false }); }} />

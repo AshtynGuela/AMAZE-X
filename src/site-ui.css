@@ -477,6 +477,14 @@
 .comparison-matrix thead th { font-weight: 700; }
 .comparison-matrix thead span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 .comparison-matrix tr:last-child td, .comparison-matrix tbody tr:last-child th { border-bottom: 0; }
+.app .comparison-matrix .comparison-score-button {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-height: 40px;
+  padding: 4px 6px;
+  color: var(--text);
+}
+.comparison-matrix .comparison-score-quality { display: block; color: var(--muted); margin-top: 4px; }
 .comparison-scroll-hint { display: none; }
 .comparison-plan-details > summary { cursor: pointer; padding: 10px 0; color: var(--muted); }
 .comparison-event { display: contents; }

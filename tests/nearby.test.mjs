@@ -26,8 +26,9 @@ test("ranking puts candidates meeting limits first and needs actual horizon and 
   assert.equal(nearbyMetrics(data, 0, 2, [0], 5, profile), null);
   const good = nearbyMetrics(data, 0, 1, [0], 5, profile);
   const blocked = nearbyMetrics(data, 0, 1, [25], 5, profile);
-  assert.deepEqual(good, { sunlight: 100, contact: 100, darkness: 0, meetsLimits: true, score: 200 });
+  assert.deepEqual(good, { sunlight: 100, contact: 100, darkness: 0, meetsLimits: true, score: 100 });
   assert.equal(blocked.meetsLimits, false);
   assert.equal(blocked.darkness, 24);
+  assert.equal(blocked.score, 0);
   assert.ok(compareNearby({ ...good, distanceKm: 10 }, { ...blocked, distanceKm: 1 }) < 0);
 });

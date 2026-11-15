@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { DAY } from "../engine/index.mjs";
 import { hoursAndMinutes, missionHours } from "../engine/comparison.mjs";
+import { formatSiteScore } from "../engine/site-score.mjs";
 import { compareNearby, nearbyPoints } from "../engine/nearby.mjs";
 import { jsonFetch, type Scenario, type Site, type Terrain } from "./store";
 
@@ -170,7 +171,7 @@ export default function NearbySites({ center, sites, mission, close, showMap, co
         <label className="nearby-filter"><input type="checkbox" checked={matchingOnly && hasFilters} disabled={!hasFilters} onChange={e => setMatchingOnly(e.target.checked)} /> Only show sites that meet the limits</label>
       </fieldset>
       </fieldset>
-      <p className="data-note">Checks eight sampled points and up to two named sites. Uses your {mission.mast} m mast and {mission.antenna}° minimum antenna angle.</p>
+      <p className="data-note">Checks eight sampled points and up to two named sites. Uses your {mission.mast} m mast and {mission.antenna}° minimum antenna angle. Sites that meet all limits rank first, followed by site score.</p>
       <div className="comparison-actions">
         <button className="primary" ref={rankButton} type="submit" disabled={running}>Rank nearby sites</button>
         {running && <button type="button" ref={cancelButton} onClick={() => {
@@ -192,6 +193,7 @@ export default function NearbySites({ center, sites, mission, close, showMap, co
         <ol className="nearby-results">
           {visibleRows.map((row, index) => <li key={row.id || row.name}>
             <div><strong>{index + 1}. {row.name}</strong> · {row.distanceKm.toFixed(1)} km
+              <p><strong>{formatSiteScore(row.score)} site score</strong></p>
               <p className="data-note">{hoursAndMinutes(missionHours(row.sunlight, search.mission.duration))} sunlight · {hoursAndMinutes(missionHours(row.contact, search.mission.duration))} Earth contact · {hoursAndMinutes(row.darkness)} longest darkness</p>
               {row.meetsLimits !== null && <small>{row.meetsLimits ? "Meets mission limits" : "Misses one or more limits"}</small>}
             </div>

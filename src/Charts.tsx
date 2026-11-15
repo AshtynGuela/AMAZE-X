@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { flightEstimate } from "../engine/mission-history.mjs";
 import { comparisonTakeaway, hoursAndMinutes, missionHours, timeAmount } from "../engine/comparison.mjs";
+import { formatSiteScore, siteScore } from "../engine/site-score.mjs";
 import {
   conditions,
   interpolate,
@@ -306,7 +307,11 @@ export function ComparisonForm({ sites, planLanding }: { sites: Site[]; planLand
   </form>;
 }
 
-export function ComparisonBoard({ scenarios, onInspect }: { scenarios: Scenario[]; onInspect?: () => void }) {
+export function ComparisonBoard({ scenarios, onInspect, onEvaluate }: {
+  scenarios: Scenario[];
+  onInspect?: () => void;
+  onEvaluate?: (scenario: Scenario) => void;
+}) {
   const a=useMetrics(scenarios[0]),b=useMetrics(scenarios[1]),c=useMetrics(scenarios[2]),d=useMetrics(scenarios[3]);
   const results=[a,b,c,d];
   const state = useScout();
@@ -315,6 +320,7 @@ export function ComparisonBoard({ scenarios, onInspect }: { scenarios: Scenario[
     return {
       ...scenario,
       metrics: results[index]?.metrics,
+      score: siteScore(results[index]?.metrics, scenario.durationDays),
       error: results[index]?.error || state.errors[packetKey(scenario.siteId, state.mastM)],
       name: [...state.sites, ...state.custom].find(site => site.id === scenario.siteId)?.name ?? scenario.siteId,
       quality: !terrain ? "Smooth horizon" : terrain.quality && terrain.quality !== "full" ? "Terrain preview" : "Detailed terrain",
@@ -332,6 +338,13 @@ export function ComparisonBoard({ scenarios, onInspect }: { scenarios: Scenario[
         <thead><tr><th scope="col">Over the stay</th>{rows.map(row =>
           <th scope="col" key={row.id}><span>Plan {row.id}</span>{row.name}</th>)}</tr></thead>
         <tbody>
+          <tr><th scope="row">Site score</th>{rows.map((row, index) =>
+            <td key={row.id}>{row.score ? <>{onEvaluate ? <button className="comparison-score-button"
+              type="button" aria-label={`Explain plan ${row.id} score of ${formatSiteScore(row.score.percent)}`}
+              onClick={() => onEvaluate(scenarios[index])}>{formatSiteScore(row.score.percent)}</button>
+              : formatSiteScore(row.score.percent)}
+              {row.quality !== "Detailed terrain" && <small className="comparison-score-quality">Preliminary</small>}
+            </> : "—"}</td>)}</tr>
           <tr><th scope="row">Sunlight</th>{rows.map(row =>
             <td key={row.id}>{row.metrics ? hoursAndMinutes(missionHours(row.metrics.sunlitPct, row.durationDays)) : row.error ? "Unavailable" : "Loading…"}</td>)}</tr>
           <tr><th scope="row">Earth contact</th>{rows.map(row =>

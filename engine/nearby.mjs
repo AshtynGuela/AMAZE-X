@@ -1,4 +1,5 @@
 import { DAY, summarize } from "./index.mjs";
+import { siteScore } from "./site-score.mjs";
 
 const RAD = Math.PI / 180;
 const MOON_KM = 1737.4;
@@ -37,13 +38,14 @@ export function nearbyMetrics(data, start, duration, mask, antenna, profile) {
   if (!mask || !data.earth?.length || start < data.earth[0][0] ||
       start + duration * DAY > data.earth.at(-1)[0]) return null;
   const m = summarize(data, start, duration, mask, antenna, 0, []);
-  if (!m) return null;
+  const evaluation = siteScore(m, duration);
+  if (!m || !evaluation) return null;
   const sunlight = m.sunlitPct, contact = m.earthDtePct, darkness = m.longestDarkH;
   return {
     sunlight, contact, darkness,
     meetsLimits: profile ? sunlight >= profile.minSunlitPct &&
       contact >= profile.minEarthDtePct && darkness <= profile.maxDarknessHours : null,
-    score: sunlight + contact - (100 * darkness / (duration * 24)),
+    score: evaluation.percent,
   };
 }
 
