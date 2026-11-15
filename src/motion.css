@@ -38,7 +38,7 @@
 .app :is(button,select,input) {
   transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease, opacity 130ms ease, scale 100ms ease;
 }
-.app button:not(.rocky-fab):not(:disabled):active { scale: .97; }
+.app button:not(.rocky-character):not(:disabled):active { scale: .97; }
 .app :is(.action-chips,.rocky-action-results,.comparison-takeaway) { animation: ui-feedback-in 180ms ease-out; }
 @keyframes ui-feedback-in { from { opacity: .35; } to { opacity: 1; } }
 .app :is(dialog[open],[role=dialog]:not(.mission-welcome)) { animation: ui-dialog-in 220ms var(--ui-ease) both; }
@@ -55,5 +55,5 @@
     animation: ui-feedback-in 80ms linear !important;
   }
   .ui-presence[data-motion=closed] > * { animation: none !important; opacity: 0; }
-  .app button:not(.rocky-fab):not(:disabled):active { scale: 1; }
+  .app button:not(.rocky-character):not(:disabled):active { scale: 1; }
 }

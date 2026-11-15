@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rocket | Integration Preview (Natural Materials)</title>
+<style>
+  :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;--panel:#091525e8;--line:#32516d;--muted:#a2b7c9;--cyan:#5de7ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:#040916;color:#f1f8ff;overflow:hidden}
+  #scene{position:fixed;inset:0}
+  .panel{position:absolute;z-index:2;top:22px;left:22px;width:min(360px,calc(100vw - 44px));border:1px solid #3b607d;border-radius:18px;background:var(--panel);backdrop-filter:blur(20px);padding:21px 21px 17px;box-shadow:0 20px 80px #0006}
+  h1{font-size:20px;margin:0 0 4px;letter-spacing:.2px}
+  .subtitle{margin:0 0 20px;color:var(--muted);font-size:12px;line-height:1.5}
+  label{display:block;font-size:11px;font-weight:750;color:#a8d5ec;text-transform:uppercase;letter-spacing:1px;margin:14px 0 7px}
+  select,button{font:inherit}
+  select{display:block;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0c2237;color:white;outline:none}
+  select:focus-visible,button:focus-visible{outline:2px solid var(--cyan)}
+  .file-input{position:relative;border:1px dashed #4e9cbd;border-radius:12px;background:#12304960;padding:14px 15px;text-align:center;cursor:pointer;color:#bdeeff;font-weight:700;font-size:13px}
+  .file-input:hover{background:#1e567360}
+  .file-input input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  button{background:#154765;color:#dff9ff;border:1px solid #387694;padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px}
+  button:hover{background:#206280}
+  .row{display:flex;align-items:center;gap:9px;margin-top:12px}
+  .row button{flex:1}
+  .row>span{color:var(--muted);font-size:12px}
+  .speed{width:100%;accent-color:#5de7ff}
+  .choice{display:flex;gap:10px;align-items:center;font-size:12px;color:#d7e7f3;margin-top:10px}.choice input{width:16px;height:16px;accent-color:#6ba4d6}
+  .small{color:var(--muted);font-size:11px;margin-top:14px;line-height:1.55}
+  .status{margin-top:12px;border-top:1px solid #264359;padding-top:12px;min-height:31px;color:#96e6ff;font-size:12px}
+  #drop{pointer-events:none;opacity:0;position:fixed;z-index:4;inset:15px;border:3px dashed var(--cyan);border-radius:22px;background:#03172ecc;display:grid;place-items:center;font-weight:800;font-size:26px;transition:opacity .15s}
+  .hint{position:absolute;bottom:18px;right:20px;color:#c6d8e8aa;font-size:12px;pointer-events:none;text-shadow:0 2px 6px #000}
+  @media(max-width:560px){.panel{top:10px;left:10px;width:calc(100vw - 20px);padding:14px}.hint{display:none}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="scene"></div>
+<div id="drop">Drop rocket GLB here</div>
+<aside class="panel">
+  <h1>Rocket — Integration Preview</h1>
+  <p class="subtitle">Neutral-lit preview of the animation-ready rocket GLB. No bloom, preserved texture colors, and no upload to a server.</p>
+  <div class="file-input">Choose or drop rocket_integration_ready.glb<input id="file" type="file" accept=".glb,model/gltf-binary" aria-label="Choose rigged rocket GLB" /></div>
+  <label for="clips">Animation clip</label>
+  <select id="clips" disabled><option>Load a GLB first</option></select>
+  <div class="row"><button id="pause" disabled>Pause</button><button id="restart" disabled>Restart</button><button id="reset" disabled>Reset camera</button></div>
+  <label for="background">Preview backdrop</label>
+  <select id="background"><option value="dark">Deep blue</option><option value="slate">Neutral slate</option><option value="light">Light gray</option></select>
+  <label class="choice"><input id="showExhaust" type="checkbox" checked /> Show subtle engine exhaust</label>
+  <label for="exposure">Preview exposure <span id="exposureLabel">0.90×</span></label>
+  <input id="exposure" class="speed" type="range" min="0.55" max="1.4" step="0.05" value="0.90" />
+  <label for="speed">Playback speed <span id="speedLabel">1.0×</span></label>
+  <input id="speed" class="speed" type="range" min="0.25" max="2" step="0.05" value="1" />
+  <p class="small">Orbit: left-drag • Zoom: scroll • Pan: right-drag<br/>Hover loops. Travel clips lift the rocket upward; the camera follows automatically. In-place clips are recommended when your application controls world movement. Exhaust plumes are softly colored transparent geometry; no particle system or bloom needed.</p>
+  <div id="status" class="status">Ready to load the rigged rocket GLB.</div>
+</aside>
+<div class="hint">Y-up · nose +Y · matte PBR · no bloom</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const el=document.getElementById('scene'), status=document.getElementById('status');
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x040916);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,0.1,1500);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=0.90;
+el.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.09;
+controls.minDistance=6;controls.maxDistance=250;
+scene.add(new THREE.HemisphereLight(0xdce8f5,0x53606e,1.0));
+const key=new THREE.DirectionalLight(0xfff3e4,1.4);key.position.set(13,25,18);scene.add(key);
+const fill=new THREE.DirectionalLight(0xa6c7ee,0.55);fill.position.set(-16,-2,-18);scene.add(fill);
+const starPositions=new Float32Array(1800*3);
+for(let i=0;i<starPositions.length;i+=3){starPositions[i]=(Math.random()-.5)*900;starPositions[i+1]=(Math.random()-.5)*900;starPositions[i+2]=(Math.random()-.5)*900;}
+const stars=new THREE.BufferGeometry();stars.setAttribute('position',new THREE.BufferAttribute(starPositions,3));
+const starfield=new THREE.Points(stars,new THREE.PointsMaterial({color:0x7ca3c8,size:.48,sizeAttenuation:true,transparent:true,opacity:.56,depthWrite:false}));scene.add(starfield);
+
+const loader=new GLTFLoader();
+let craft=null, rig=null, mixer=null, actions=new Map(), action=null, currentUrl=null, paused=false;
+const clipSelect=document.getElementById('clips'), pauseBtn=document.getElementById('pause');
+const restartBtn=document.getElementById('restart'), resetBtn=document.getElementById('reset');
+const speed=document.getElementById('speed'), speedLabel=document.getElementById('speedLabel');
+const followed=new THREE.Vector3();
+const cameraRelative=new THREE.Vector3(27,15,40);
+function setCamera(){
+ const anchor=rig?rig.getWorldPosition(new THREE.Vector3()):new THREE.Vector3();
+ controls.target.copy(anchor);camera.position.copy(anchor).add(cameraRelative);
+ controls.update();followed.copy(anchor);
+}
+setCamera();
+function selectClip(name){
+ if(!mixer)return;
+ mixer.stopAllAction();mixer.setTime(0);if(rig){rig.position.set(0,0,0);rig.quaternion.identity();}
+ action=actions.get(name);
+ if(!action)return;
+ action.reset();action.enabled=true;action.paused=false;
+ action.clampWhenFinished=true;
+ action.setLoop((name==='Hover_Loop'||name.endsWith('_InPlace'))?THREE.LoopRepeat:THREE.LoopOnce,Infinity);
+ action.play();paused=false;pauseBtn.textContent='Pause';
+ status.textContent='Playing '+name+((name==='Hover_Loop'||name.endsWith('_InPlace'))?' (loop)':' (once)');
+}
+function openFile(file){
+ if(!file)return;
+ if(currentUrl)URL.revokeObjectURL(currentUrl);
+ currentUrl=URL.createObjectURL(file);
+ status.textContent='Loading '+file.name+'…';
+ loader.load(currentUrl,gltf=>{
+  if(craft)scene.remove(craft);
+  if(mixer)mixer.stopAllAction();
+  craft=gltf.scene;scene.add(craft);applyExhaustVisibility();rig=craft.getObjectByName('Rocket_Flight_Rig_ROOT_Yup_NosePlusY')||craft;
+  mixer=new THREE.AnimationMixer(craft);actions.clear();
+  for(const clip of gltf.animations)actions.set(clip.name,mixer.clipAction(clip));
+  clipSelect.replaceChildren();
+  for(const name of actions.keys()){const option=document.createElement('option');option.value=name;option.textContent=name;clipSelect.appendChild(option);}
+  clipSelect.disabled=!actions.size;pauseBtn.disabled=!actions.size;restartBtn.disabled=!actions.size;resetBtn.disabled=false;
+  setCamera();
+  selectClip(actions.has('Hover_Loop')?'Hover_Loop':gltf.animations[0]?.name);
+  if(!gltf.animations.length)status.textContent='Model loaded; no animations found.';
+ },undefined,e=>{status.textContent='Failed to load GLB: '+e.message;console.error(e);});
+}
+document.getElementById('file').addEventListener('change',e=>openFile(e.target.files[0]));
+// Optional convenience when served on localhost/HTTPS: preview the included model directly.
+if (location.protocol==='http:' || location.protocol==='https:') {
+  fetch('./rocket_integration_ready.glb').then(resp => {
+    if(!resp.ok) return null;
+    return resp.blob();
+  }).then(blob=>{if(blob)openFile(new File([blob],'rocket_integration_ready.glb',{type:'model/gltf-binary'}));})
+    .catch(()=>{});
+}
+clipSelect.addEventListener('change',()=>selectClip(clipSelect.value));
+pauseBtn.addEventListener('click',()=>{if(!action)return;paused=!paused;action.paused=paused;pauseBtn.textContent=paused?'Play':'Pause';});
+restartBtn.addEventListener('click',()=>selectClip(clipSelect.value));
+resetBtn.addEventListener('click',setCamera);
+speed.addEventListener('input',()=>speedLabel.textContent=Number(speed.value).toFixed(2)+'×');
+const overlay=document.getElementById('drop');
+window.addEventListener('dragover',e=>{e.preventDefault();overlay.style.opacity='1'});
+window.addEventListener('dragleave',e=>{e.preventDefault();if(!e.relatedTarget)overlay.style.opacity='0'});
+window.addEventListener('drop',e=>{e.preventDefault();overlay.style.opacity='0';openFile([...e.dataTransfer.files].find(f=>f.name.toLowerCase().endsWith('.glb')));});
+const exhaustCheckbox=document.getElementById('showExhaust');
+function applyExhaustVisibility(){
+ if(!craft)return;
+ craft.traverse(o=>{if(o.name.startsWith('Thruster_') && o.name.endsWith('_Anchor'))o.visible=exhaustCheckbox.checked;});
+}
+exhaustCheckbox.addEventListener('change',applyExhaustVisibility);
+const exposureInput=document.getElementById('exposure');
+exposureInput.addEventListener('input',()=>{
+ renderer.toneMappingExposure=Number(exposureInput.value);
+ document.getElementById('exposureLabel').textContent=Number(exposureInput.value).toFixed(2)+'×';
+});
+document.getElementById('background').addEventListener('change',e=>{
+ const type=e.target.value;
+ scene.background=new THREE.Color(type==='dark'?0x040916:type==='slate'?0x38434c:0xd9e1e6);
+ starfield.visible=type==='dark';
+});
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.075);
+ if(mixer)mixer.update(dt*Number(speed.value));
+ if(rig){const newP=rig.getWorldPosition(new THREE.Vector3());const diff=newP.clone().sub(followed);camera.position.add(diff);controls.target.add(diff);followed.copy(newP);}
+ controls.update();renderer.render(scene,camera);}
+animate();
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>

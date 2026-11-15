@@ -2,7 +2,6 @@ import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useRef, u
 import { Canvas, useThree } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { LoopRepeat, Mesh, MeshPhysicalMaterial, Texture } from "three";
-import { MessageCircle, MoveDiagonal } from "lucide-react";
 import { calmVoice, useDialogueReveal } from "./rocky-voice";
 import Presence from "./Presence";
 
@@ -121,7 +120,7 @@ function Model({ clip, paused, replay, onReady }: { clip: string; paused: boolea
 class MascotBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
-  render() { return this.state.failed ? <MessageCircle size={28} /> : this.props.children; }
+  render() { return this.state.failed ? null : this.props.children; }
 }
 
 export function RockyBubble({ children }: { children: ReactNode }) {
@@ -161,9 +160,12 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
     const saved=Number(localStorage.getItem("lunar-rocky-chat-width"));
     return Number.isFinite(saved)&&saved>=280&&saved<=640?Math.round(saved/10)*10:390;
   });
-  const resizeDrag=useRef<{id:number;x:number;y:number;scale:number}|null>(null);
   useEffect(()=>{
-    const open=()=>{setMenu({x:Math.max(8,innerWidth-240),y:innerHeight-140});setSpeech(null);};
+    const open=()=>{
+      setResizeOpen(false);
+      setMenu({x:Math.max(8,innerWidth-240),y:innerHeight-140});
+      setSpeech(null);
+    };
     window.addEventListener("rocky-menu",open);
     return()=>window.removeEventListener("rocky-menu",open);
   },[]);
@@ -177,6 +179,7 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
   const [speech, setSpeech] = useState<{ text: string; id: number } | null>(null);
   const clearSpeech = useCallback(() => setSpeech(null), []);
   const [menu, setMenu] = useState<Point | null>(null);
+  const [resizeOpen, setResizeOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const [modelReady, setModelReady] = useState(false);
@@ -195,7 +198,7 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
   const wasOpen = useRef(false);
   const idle = visible && pageVisible && modelReady && !open && !paused && !dragging && !menu && !gesture;
   const compact = viewport.width <= 760;
-  const baseSize = compact ? 58 : 68;
+  const baseSize = compact ? 76 : 86;
   const size = Math.min(Math.max(44, baseSize * scale), viewport.width, viewport.height);
   const dock = { x: viewport.width - size, y: viewport.height - size };
   const inspectorWidth = viewport.width <= 1200 ? 324 : viewport.width >= 1600 ? 390 : 370;
@@ -223,16 +226,6 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
     const resize = () => setViewport({ width: innerWidth, height: innerHeight });
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, []);
-  useEffect(() => {
-    const button=mascot.current;if(!button)return;
-    const wheel=(event:WheelEvent)=>{
-      if(!event.ctrlKey&&!event.metaKey&&!event.altKey)return;
-      event.preventDefault();event.stopPropagation();
-      setScale(value=>clamp(value*Math.exp(-event.deltaY*.008),.65,3));
-    };
-    button.addEventListener("wheel",wheel,{passive:false});
-    return()=>button.removeEventListener("wheel",wheel);
   }, []);
   useEffect(() => {
     const onVisibility = () => setPageVisible(!document.hidden);
@@ -321,6 +314,7 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
   useEffect(() => () => clearTimeout(longPress.current), []);
 
   function showMenu(point: Point) {
+    setResizeOpen(false);
     setMenu(point);
     setSpeech(null);
   }
@@ -377,10 +371,10 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
       setDragging(false);
     }
   }
-  function menuAction(callback: () => void) {
+  function menuAction(callback: () => void, restoreFocus = true) {
     callback();
     setMenu(null);
-    mascot.current?.focus();
+    if (restoreFocus) requestAnimationFrame(() => mascot.current?.focus({ preventScroll: true }));
   }
   const clip = gesture?.clip ?? (movement === "Random" ? (thinking ? "Question" : randomClip) : movement);
   return <aside className="rocky-overlay" aria-label="Rocky assistant" hidden={!visible}
@@ -394,14 +388,14 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
         e.stopPropagation();
       }
     }}>
-    <button ref={mascot} type="button" className="rocky-character rocky-fab"
+    <button ref={mascot} type="button" className="rocky-character"
       style={{ left: at.x, top: at.y, width: size, height: size }}
       aria-label={open ? "Close Rocky chat" : "Ask Rocky"} aria-expanded={open}
       aria-controls={open ? "rocky-chat" : undefined}
       data-animation={clip} title="Click to chat. Right-click for Rocky’s options."
       onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd}
       onPointerCancel={pointerEnd} onLostPointerCapture={pointerEnd}
-      onClick={e => {
+      onClick={() => {
         if (moved.current) return;
         setMenu(null);
         if (sound) void calmVoice.unlock();
@@ -414,7 +408,7 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
           e.preventDefault(); e.stopPropagation(); showMenu({ x: at.x, y: at.y });
         }
       }}>
-      <div className="rocky-fab-model" aria-hidden="true"><MascotBoundary><Suspense fallback={<MessageCircle size={26} />}>
+      <div className="rocky-model" aria-hidden="true"><MascotBoundary><Suspense fallback={null}>
         <Canvas frameloop="demand" dpr={[1, 2]} camera={{ position: [0, 0.2, 3.1], fov: 47 }}
           gl={{ alpha: true, antialias: true }} aria-hidden="true">
           <ambientLight intensity={1.45} />
@@ -422,17 +416,7 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
           <Model clip={clip} paused={paused || !visible || !pageVisible} replay={gesture?.id ?? 0} onReady={modelLoaded} />
         </Canvas>
       </Suspense></MascotBoundary></div>
-      <span className="rocky-fab-badge" aria-hidden="true"><MessageCircle size={12} /></span>
-    </button>
-    <button type="button" className="rocky-resize-handle" aria-label="Resize Rocky" title="Drag to resize Rocky. Arrow keys also change his size."
-      style={{left:at.x+size-17,top:at.y+size-17}}
-      onPointerDown={event=>{event.preventDefault();event.stopPropagation();event.currentTarget.setPointerCapture(event.pointerId);resizeDrag.current={id:event.pointerId,x:event.clientX,y:event.clientY,scale};setDragging(true);setSpeech(null);}}
-      onPointerMove={event=>{const start=resizeDrag.current;if(!start||start.id!==event.pointerId)return;setScale(clamp(start.scale+(event.clientX-start.x+event.clientY-start.y)/(baseSize*2),.65,3));}}
-      onPointerUp={()=>{resizeDrag.current=null;setDragging(false);}}
-      onPointerCancel={()=>{resizeDrag.current=null;setDragging(false);}}
-      onLostPointerCapture={()=>{resizeDrag.current=null;setDragging(false);}}
-      onKeyDown={event=>{if(["ArrowUp","ArrowRight","ArrowDown","ArrowLeft"].includes(event.key)){event.preventDefault();event.stopPropagation();setScale(value=>clamp(value+(["ArrowUp","ArrowRight"].includes(event.key) ? .1 : -.1),.65,3));}}}>
-      <MoveDiagonal size={13}/>
+      <span className="rocky-name" aria-hidden="true">Rocky</span>
     </button>
     <Presence show={!!(visible && (open || (speech && pageVisible && !menu && !dragging)))}>{visible && (open || (speech && pageVisible && !menu && !dragging)) && <div className={`rocky-conversation ${side}`}
       style={{ left: bubbleX, width: bubbleWidth, [side === "above" ? "bottom" : "top"]: bubbleY,
@@ -461,12 +445,14 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
         const next = e.key === "Home" ? 0 : e.key === "End" ? buttons.length - 1 : (index + (e.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
         buttons[next]?.focus();
       }}>
-      <button role="menuitem" onClick={() => menuAction(() => { if (!open) onChat(); })}>Chat with Rocky</button>
-      <div className="rocky-size-settings" role="group" aria-label="Rocky size settings">
+      <button role="menuitem" onClick={() => menuAction(() => { if (!open) onChat(); }, false)}>Chat with Rocky</button>
+      <button role="menuitem" aria-expanded={resizeOpen} aria-controls={resizeOpen ? "rocky-size-settings" : undefined}
+        onClick={() => setResizeOpen(value => !value)}>Resize</button>
+      {resizeOpen && <div id="rocky-size-settings" className="rocky-size-settings" role="group" aria-label="Rocky size settings">
         <label>Rocky size <output>{Math.round(scale*100)}%</output><input aria-label="Rocky size" type="range" min="65" max="300" step="5" value={Math.round(scale*100)} onChange={event=>setScale(Number(event.target.value)/100)}/></label>
         <label>Chat bubble width <output>{Math.round(chatWidth)} px</output><input aria-label="Chat bubble width" type="range" min="280" max="640" step="10" value={chatWidth} onChange={event=>setChatWidth(Number(event.target.value))}/></label>
-        <p>Drag the corner handle or pinch Rocky. Your preferred sizes are saved.</p>
-      </div>
+        <button role="menuitem" onClick={() => setScale(1)}>Reset size</button>
+      </div>}
       <div role="separator" />
       {movements.map(([id, name]) => <button key={id} role="menuitemradio" aria-checked={movement === id}
         onClick={() => menuAction(() => { setMovement(id); setGesture(null); setPaused(false); })}>{name}</button>)}
@@ -479,7 +465,6 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
       <button role="menuitemcheckbox" aria-checked={stream} onClick={() => menuAction(() => setStream(!stream))}>Stream reply text</button>
       <button role="menuitemcheckbox" aria-checked={sound} onClick={() => menuAction(() => { if (!sound) void calmVoice.unlock(); setSound(!sound); })}>Calm dialogue blips</button>
       <button role="menuitem" onClick={() => menuAction(() => { if (sound) void calmVoice.unlock(); saySomething(); })}>Say something</button>
-      <button role="menuitem" onClick={() => menuAction(() => setScale(1))}>Reset size</button>
       <button role="menuitem" onClick={() => menuAction(() => { setDocked(false); setHome({ ...defaultPosition, ...viewport }); setPosition(null); })}>Reset position</button>
       <button role="menuitem" onClick={() => menuAction(() => setDocked(true))}>Move to corner</button>
     </div>}

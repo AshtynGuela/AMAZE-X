@@ -61,6 +61,7 @@ import {
   EventList,
   useMetrics,
   ComparisonBoard,
+  ComparisonForm,
 } from "./Charts";
 import { APP_NAME } from "../engine/app-actions.mjs";
 import Welcome from "./Welcome";
@@ -162,6 +163,8 @@ export default function App() {
     snapshot = useRef<() => string>(() => ""),
     menuRef = useRef<HTMLDivElement>(null);
   const markEntryReady = useCallback(() => setEntryReady(true), []);
+  const comparisonTrigger = useRef<HTMLElement | null>(null);
+  const nearbyTrigger = useRef<HTMLElement | null>(null);
   useEffect(()=>{
     if(phoneDetails){
       const panel=document.getElementById("site-inspector");
@@ -182,11 +185,12 @@ export default function App() {
     : null, [packet, state.time, mask, state.minAntennaEl]);
   const solar = state.view === "solar_system";
   useEffect(() => {
-    if (!solar && !useScout.getState().rail) useScout.getState().set({ rail: "sites" });
-  }, [solar]);
+    const current = useScout.getState();
+    if (current.compare && current.rail) current.set({ rail: null });
+    else if (!solar && !phoneLayout && !current.compare && !current.rail) current.set({ rail: "sites" });
+  }, [solar, phoneLayout]);
   useEffect(() => {
-    if (state.compare) useScout.getState().set({ rail: 'compare' });
-    else if (useScout.getState().rail === 'compare') useScout.getState().set({rail:null});
+    if (state.compare && useScout.getState().rail) useScout.getState().set({ rail: null });
   }, [state.compare]);
   const activeScenario = selectedScenario(state),
     probe = useMemo(
@@ -374,6 +378,21 @@ export default function App() {
       ...(id !== 'compare' ? {compare:false} : {}),
       ...(solar && id !== "clock" ? { view: "globe" as const } : {}),
     });
+  const openComparison = () => {
+    comparisonTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    state.set({ compare: true, rail: null, timeline: false, ...(solar ? { view: "globe" as const } : {}) });
+  };
+  const closeComparison = () => {
+    state.set({ compare: false });
+    requestAnimationFrame(() => {
+      const target = comparisonTrigger.current;
+      if (target && target.getClientRects().length) target.focus();
+      else document.querySelector<HTMLButtonElement>('.instrument-rail [aria-label="Compare"]')?.focus();
+    });
+  };
+  useEffect(() => {
+    if (state.compare && !solar && !state.welcome) document.getElementById("comparison-heading")?.focus({ preventScroll: true });
+  }, [state.compare, solar, state.welcome]);
   const share = async ():Promise<ActionResult> => {
     try {
       const value=encodeSession(useScout.getState());
@@ -476,6 +495,7 @@ export default function App() {
     setMenu(null);
   };
   const openNearby = (point: Pick<NearbyPoint, "id" | "name" | "lat" | "lon">) => {
+    nearbyTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const scenario = state.scenarios.find(s => s.id === state.activeScenarioId && s.siteId === point.id)
       ?? state.scenarios.find(s => s.siteId === point.id);
     setNearby({
@@ -487,18 +507,38 @@ export default function App() {
   };
   const compareNearbySite = (point: RankedSite, mission: NearbyMission) => {
     const current = useScout.getState();
-    const id = ["A", "B", "C", "D"].find(id => !current.scenarios.some(s => s.id === id));
-    if (!id) { current.message("Four scenarios are open. Remove one to compare this site."); return; }
-    const existing = sites.find(s => s.id === point.id || (s.lat === point.lat && s.lon === point.lon));
-    const candidate = existing ?? {
-      id: "custom-" + crypto.randomUUID(), name: `Nearby · ${point.name}`, region: "Ranked lunar point",
-      lat: point.lat, lon: point.lon, family: "custom", source: "", description: "Sampled lunar coordinates.",
+    const epoch = new Date(mission.time).toISOString();
+    const custom = [...current.custom];
+    const scenarios = [...current.scenarios];
+    const center = nearby?.center ?? ranked?.center;
+    const asSite = (location: NearbyPoint, name: string) => {
+      const existing = [...current.sites, ...custom].find(site => site.id === location.id ||
+        (site.lat === location.lat && site.lon === location.lon));
+      if (existing) return existing;
+      const site: Site = {
+        id: "custom-" + crypto.randomUUID(), name, region: "Nearby site search",
+        lat: location.lat, lon: location.lon, family: "custom", source: "", description: "Sampled lunar coordinates.",
+      };
+      custom.push(site);
+      return site;
     };
+    const add = (siteId: string) => {
+      const existing = scenarios.find(plan => plan.siteId === siteId && plan.epoch === epoch &&
+        plan.durationDays === mission.duration && plan.profile?.minSunlitPct === mission.profile?.minSunlitPct &&
+        plan.profile?.minEarthDtePct === mission.profile?.minEarthDtePct &&
+        plan.profile?.maxDarknessHours === mission.profile?.maxDarknessHours);
+      if (existing) return existing.id;
+      const id = ["A", "B", "C", "D"].find(id => !scenarios.some(plan => plan.id === id));
+      if (id) scenarios.push({ id, siteId, epoch, durationDays: mission.duration, profile: mission.profile });
+      return id;
+    };
+    const candidate = asSite(point, `Nearby · ${point.name}`);
+    const id = add(candidate.id);
+    if (!id) { current.message("Four plans are open. Remove one to compare this site."); return; }
+    if (center && scenarios.length < 4) add(asSite(center, center.name).id);
     current.set({
-      custom: existing ? current.custom : [...current.custom, candidate],
-      scenarios: [...current.scenarios, { id, siteId: candidate.id, epoch: new Date(mission.time).toISOString(),
-        durationDays: mission.duration, profile: mission.profile }],
-      activeScenarioId: id, compare: true,
+      custom, scenarios, activeScenarioId: id, compare: true, rail: null, timeline: false,
+      terrains: { ...current.terrains, [candidate.id]: { ...point.terrain, siteId: candidate.id } },
     });
     current.fly(candidate.id);
     setRanked(null);
@@ -734,11 +774,7 @@ export default function App() {
             aria-pressed={id === "compare" ? state.compare : state.rail === id}
             onClick={() =>
               id === "compare"
-                ? state.set({
-                    compare: !state.compare,
-                    rail: state.compare ? null : "compare",
-                    ...(solar ? { view: "globe" as const } : {}),
-                  })
+                ? state.compare && !solar ? closeComparison() : openComparison()
                 : rail(id)
             }
           >
@@ -765,13 +801,12 @@ export default function App() {
                   clock: "Mission Clock",
                   layers: "Map Layers",
                   settings: "Settings",
-                  compare: <><span className="site-compare-heading">Compare Landing</span><br/>Plans</>,
                 }[state.rail]
               }
             </h2>
             <IconButton
               label="Close tools"
-              onClick={() => state.set({ rail: null, ...(state.rail === 'compare' ? {compare:false} : {}) })}
+              onClick={() => state.set({ rail: null })}
             >
               <SiteAsset name="collapse" />
             </IconButton>
@@ -1061,26 +1096,11 @@ export default function App() {
               </div>
             </>
           )}
-          {state.rail === 'compare' && <>
-            <span className="site-scenario-count">{state.scenarios.length}/4</span>
-            <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
-            {state.scenarios.length ? <div className="site-scenario-list">
-              {state.scenarios.map(scenario => <button key={scenario.id} onClick={() => {
-                state.select(scenario.siteId); state.set({activeScenarioId:scenario.id,compare:true});
-              }}>{sites.find(s => s.id === scenario.siteId)?.name || scenario.siteId}<small>{scenario.epoch === 'live' ? 'Follows mission clock' : utc(Date.parse(scenario.epoch))}</small></button>)}
-              <button className="full-width" onClick={() => state.set({scenarioDialog:true})} disabled={state.scenarios.length >= 4}>Add scenario</button>
-              <button className="full-width" onClick={share}>Share plans</button>
-            </div> : <div className="site-compare-empty">
-              <SiteAsset name="clipboard" />
-              <p>Same site, different date. Or a different place entirely.</p>
-              <button onClick={() => state.set({scenarioDialog:true})}>Create your first scenario</button>
-            </div>}
-          </>}
         </section>
       )}
       </Presence>
       <div className="phone-only phone-map-controls" aria-label="Phone map controls">
-        <label>View<select aria-label="Map view" value={state.view} onChange={event=>{state.set({view:event.target.value as typeof state.view,rail:null});setPhoneDetails(false);}}>
+        <label><span>View</span><select aria-label="Map view" value={state.view} onChange={event=>{state.set({view:event.target.value as typeof state.view,rail:null});setPhoneDetails(false);}}>
           <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option><option value="globe">Moon</option>
           <option value="polar_south">South pole</option><option value="polar_north">North pole</option><option value="surface">Terrain flyover</option><option value="horizon">Horizon</option>
         </select></label>
@@ -1088,7 +1108,7 @@ export default function App() {
           {phoneDetails && inspector ? "Close details" : solar ? "Body details" : "Site details"}
         </button>
       </div>
-      <button className="phone-only phone-details-close" aria-label="Close details" onClick={()=>{setPhoneDetails(false);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('.view-toolbar button[aria-label="Show inspector"]')?.focus());}}><X size={18}/>Close</button>
+      <button className="phone-only phone-details-close" aria-label="Close details" onClick={()=>{setPhoneDetails(false);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".phone-map-controls > button")?.focus());}}><X size={18}/>Close</button>
       <div className="view-toolbar" aria-label="View controls">
         {[
           [Orbit, "solar_system", "Solar System"],
@@ -1156,6 +1176,10 @@ export default function App() {
               <SlidersHorizontal size={17} />
             </IconButton>
           </header>
+          <div className="site-quick-actions">
+            <button onClick={openComparison}><Columns2 size={16} /> Compare sites or dates</button>
+            <button onClick={() => openNearby(site)}>Find better spots nearby</button>
+          </div>
           <div className="coordinates">
             <span>
               {Math.abs(site.lat).toFixed(5)}° {site.lat < 0 ? "S" : "N"}
@@ -1203,6 +1227,7 @@ export default function App() {
                     <h3><Sun size={18} /> Sunlight now</h3>
                     <strong>{current.sun.visible ? "Sunlight available" : "Little or no direct sunlight"}</strong>
                     <p>{(current.sun.visibleFraction * 100).toFixed(0)}% of the Sun's disc is visible.</p>
+                    <p>Sun elevation: {deg(current.sun.el)}</p>
                     <small>{current.sun.terrainVisibleFraction === 0
                       ? (mask ? "Terrain blocks the Sun." : "The Sun is below the smooth horizon.")
                       : current.sun.eclipse.state !== "none"
@@ -1345,7 +1370,9 @@ export default function App() {
               <>
                 {activeScenario.profile && (
                   <p className="mission-verdict">
-                    {terrain ? (analysis?.rules?.every((r: any) => r.passed)
+                    {terrain?.quality === "preview" || terrain?.quality === "quick"
+                      ? "Preliminary result. Wait for detailed terrain to check your mission limits."
+                      : terrain && analysis?.rules?.length ? (analysis.rules.every((r: any) => r.passed)
                       ? "Meets your sunlight, darkness and contact limits."
                       : "Does not meet all your mission limits. Open comparison for details.")
                       : "Smooth horizon estimate. Add terrain data to check your mission limits."}
@@ -1402,7 +1429,6 @@ export default function App() {
             >
               <Flag size={16} /> Plan landing <ArrowUpRight size={16} />
             </button>
-            <button className="full-width" onClick={() => openNearby(site)}>Find better spots nearby</button>
             {ranked && <button className="text-button" onClick={() => setRanked(null)}>Clear ranked pins</button>}
             <div className="button-row">
               <button onClick={() => state.set({ timeline: !state.timeline })}>
@@ -1471,42 +1497,35 @@ export default function App() {
         </section>
       )}
       </Presence>
-      <Presence show={state.compare && state.scenarios.length > 0 && !solar}>{state.compare && state.scenarios.length > 0 && !solar && (
-        <section className="compare-tray">
+      <Presence show={state.compare && !solar}>{state.compare && !solar && (
+        <section className="compare-tray" aria-labelledby="comparison-heading" onKeyDown={event => {
+          if (event.key === "Escape") closeComparison();
+        }}>
           <header>
-            <h2>
+            <h2 id="comparison-heading" tabIndex={-1}>
               Compare landing plans{" "}
               <span>{state.scenarios.length} / 4</span>
             </h2>
             <div className="button-row">
-              <button onClick={() => state.set({ scenarioDialog: true })}>
-                <Plus size={14} /> Add scenario
-              </button>
-              <button disabled={!state.scenarios.length} onClick={share}>
-                Share
-              </button>
+              {state.scenarios.length > 0 && state.scenarios.length < 4 && <button
+                onClick={() => document.getElementById("comparison-site")?.focus()}
+              >Add plan</button>}
+              {state.scenarios.length > 0 && <button onClick={share}>Share</button>}
               <IconButton
                 label="Close comparison"
-                onClick={() => state.set({ compare: false })}
+                onClick={closeComparison}
               >
                 <X size={18} />
               </IconButton>
             </div>
           </header>
-          {state.scenarios.length ? (
-            <ComparisonBoard scenarios={state.scenarios} />
-          ) : (
-            <div className="compare-empty">
-              <Columns2 size={25} />
-              <p>Same site, different date. Or a different place entirely.</p>
-              <button
-                className="primary"
-                onClick={() => state.set({ scenarioDialog: true })}
-              >
-                Create your first scenario
-              </button>
-            </div>
-          )}
+          {state.scenarios.length > 0 && <ComparisonBoard scenarios={state.scenarios} onInspect={phoneLayout ? () => {
+            setInspector(true);
+            setPhoneDetails(true);
+            state.set({ compare: false, rail: null });
+            requestAnimationFrame(() => document.getElementById("site-inspector")?.focus({ preventScroll: true }));
+          } : undefined} />}
+          <ComparisonForm sites={sites} planLanding={() => state.set({ scenarioDialog: true })} />
         </section>
       )}
       </Presence>
@@ -1711,10 +1730,14 @@ export default function App() {
         </Suspense>
       )}
       {nearby && <Suspense fallback={null}>
-        <NearbySites {...nearby} sites={sites} close={() => setNearby(null)} compare={compareNearbySite}
+        <NearbySites {...nearby} sites={sites} close={() => {
+          setNearby(null);
+          requestAnimationFrame(() => nearbyTrigger.current?.focus());
+        }} compare={compareNearbySite}
           showMap={(rows, mission) => {
             setRanked({ center: nearby.center, rows, mission });
-            state.set({ view: "globe", markers: true });
+            setPhoneDetails(false);
+            state.set({ view: "globe", markers: true, rail: null });
             setNearby(null);
           }} />
       </Suspense>}
@@ -1766,6 +1789,7 @@ export default function App() {
               type="button"
               onClick={() => {
                 setCustomDialog(null);
+                setPhoneDetails(false);
                 state.set({
                   pickingSite: true,
                   view: "globe",
@@ -1888,7 +1912,7 @@ export default function App() {
                 <h3>Terrain</h3>
                 <p>
                   {terrain
-                    ? `The ${terrain.quality === "quick" ? "preliminary" : "detailed"} horizon uses a ${terrain.resolutionM.toFixed(0)} m LOLA elevation grid, ${terrain.masks[String(state.mastM)]?.length ?? 720} bearings out to 150 km, lunar curvature and a ${state.mastM} m mast.`
+                    ? `The ${terrain.quality && terrain.quality !== "full" ? "preliminary" : "detailed"} horizon uses a ${terrain.resolutionM.toFixed(0)} m LOLA elevation grid, ${terrain.masks[String(state.mastM)]?.length ?? 720} bearings out to 150 km, lunar curvature and a ${state.mastM} m mast.`
                     : "The smooth horizon uses the Moon’s curvature and the observer’s height."}
                 </p>
                 <p>

@@ -423,3 +423,251 @@
  .app.lunar-ui.solar-mode .solar-catalog { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
  .app.lunar-ui .site-layer-fields .switch-row { max-width: none; }
 }
+
+.site-quick-actions {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.site-quick-actions > button {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 38px;
+}
+.app .compare-tray { background: #17191e; }
+.app .compare-tray h2 { max-width: none; font-size: 20px; }
+.app .compare-tray > header { align-items: center; gap: 8px; }
+.app .compare-tray > header > .button-row { width: auto; flex-wrap: nowrap; }
+.comparison-form {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 14px;
+}
+.comparison-form h3 { margin: 0 0 12px; font-size: 16px; }
+.comparison-fields, .nearby-limit-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .75fr);
+  gap: 12px;
+}
+.comparison-fields label, .nearby-limit-fields label { min-width: 0; }
+.comparison-fields label { margin-bottom: 4px; }
+.comparison-fields input, .comparison-fields select, .nearby-form input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+}
+.comparison-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.comparison-matrix-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.comparison-matrix { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.comparison-matrix :is(th, td) {
+  min-width: 106px;
+  padding: 9px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.comparison-matrix th:first-child {
+  position: sticky;
+  left: 0;
+  background: #242424;
+  border-right: 1px solid var(--line);
+}
+.comparison-matrix thead th { font-weight: 700; }
+.comparison-matrix thead span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.comparison-matrix tr:last-child td, .comparison-matrix tbody tr:last-child th { border-bottom: 0; }
+.comparison-scroll-hint { display: none; }
+.comparison-plan-details > summary { cursor: pointer; padding: 10px 0; color: var(--muted); }
+.comparison-event { display: contents; }
+.nearby-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.nearby-form .nearby-date { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.nearby-form .nearby-limits {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.nearby-limits legend { padding: 0 6px; }
+.nearby-limit-fields label { margin: 0 0 12px; }
+.nearby-limits .nearby-filter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+}
+.nearby-limits .nearby-filter input { width: 20px; height: 20px; flex: none; margin: 0; }
+
+@media (max-width:760px), (max-width:960px) and (max-height:500px) and (orientation:landscape) {
+  .app.lunar-ui {
+    --panel: #17191e;
+    --line: #454953;
+    --muted: #d1d5dc;
+    --site-header: var(--phone-top);
+    --phone-map-top: calc(var(--phone-top) + 66px);
+    font-family: "D-DIN", sans-serif;
+  }
+  .app.lunar-ui .topbar { background: var(--panel); box-shadow: none; }
+  .app.lunar-ui .top-actions { display: flex; gap: 6px; align-items: center; }
+  .app.lunar-ui .top-actions > .phone-rocky {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 6px 9px;
+    font-size: 14px;
+  }
+  .app.lunar-ui .brand .site-wordmark { font-size: clamp(19px, 5.3vw, 26px); }
+  .app.lunar-ui .brand .site-wordmark > span { color: #aeb9cb; }
+  .app.lunar-ui .phone-map-controls { display: flex; top: calc(var(--phone-top) + 8px); align-items: center; }
+  .app.lunar-ui .phone-map-controls label { display: block; }
+  .app.lunar-ui .phone-map-controls label > span { position: absolute; clip-path: inset(50%); }
+  .app.lunar-ui .phone-map-controls select { width: 100%; }
+  .app.lunar-ui .view-toolbar { display: none; }
+  .app.lunar-ui .instrument-rail {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    align-items: stretch;
+    width: auto;
+    height: var(--phone-nav);
+    padding: 3px max(4px, env(safe-area-inset-right, 0px)) calc(3px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px));
+    background: var(--panel);
+    box-shadow: none;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+  }
+  .app.lunar-ui .instrument-rail::before, .app.lunar-ui .instrument-rail::after { display: none; }
+  .app.lunar-ui .instrument-rail > button {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    height: 54px;
+    min-width: 0;
+    gap: 3px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .app.lunar-ui .instrument-rail > button > span:not(.site-rail-icon) { display: inline; }
+  .app.lunar-ui .instrument-rail > .icon-button { display: none; }
+  .app.lunar-ui .site-rail-icon { transform: none; width: 23px; height: 23px; }
+  .app.lunar-ui .site-rail-icon img { width: 23px; height: 23px; object-fit: contain; }
+  .app.lunar-ui .clockbar {
+    left: 0;
+    right: 0;
+    bottom: var(--phone-nav);
+    width: auto;
+    height: 52px;
+    padding: 0 max(8px, env(safe-area-inset-right, 0px)) 0 max(8px, env(safe-area-inset-left, 0px));
+    margin: 0;
+    background: var(--panel);
+  }
+  .app.lunar-ui:is([data-phone-details="open"], :has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.rocky-panel,.rocky-menu)) .clockbar { display: none; }
+  .app.lunar-ui .clock-readout { font-size: 14px; letter-spacing: 0; }
+  .app.lunar-ui .transport { margin: 0; gap: 0; }
+  .app.lunar-ui .transport > button { width: 44px; height: 44px; }
+  .app.lunar-ui .site-view-360 { display: none; }
+  .app.lunar-ui :is(.flyout, .compare-tray, .timeline-drawer, .slip-tray),
+  .app.lunar-ui[data-phone-details="open"] :is(.inspector, .solar-info),
+  .app.lunar-ui.solar-mode[data-phone-details="open"] .solar-info {
+    top: calc(var(--phone-top) + 6px);
+    bottom: calc(var(--phone-nav) + 6px);
+    left: max(6px, env(safe-area-inset-left, 0px));
+    right: max(6px, env(safe-area-inset-right, 0px));
+    width: auto;
+    height: auto;
+    max-height: none;
+    padding: 14px;
+    z-index: 42;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    scrollbar-width: auto;
+  }
+  .app.lunar-ui[data-phone-details="closed"] :is(.inspector,.solar-info),
+  .app.lunar-ui.solar-mode[data-phone-details="closed"] .solar-info,
+  .app.lunar-ui:has([data-motion="open"] > :is(.flyout,.compare-tray,.timeline-drawer,.slip-tray), .slip-tray) :is(.inspector,.solar-info) { display: none; }
+  .app.lunar-ui[data-phone-details="open"] :is(.inspector,.solar-info)::before { content: none; }
+  .app.lunar-ui[data-phone-details="open"] :is(.inspector,.solar-info) {
+    padding-top: 56px;
+    scroll-padding-top: 64px;
+  }
+  .app.lunar-ui .phone-details-close { top: calc(var(--phone-top) + 12px); z-index: 43; right: 14px; }
+  .app.lunar-ui :is(.flyout,.compare-tray) > header {
+    top: -14px;
+    margin: -6px -2px 12px;
+    padding: 4px 2px 8px;
+  }
+  .app.lunar-ui .flyout > header .icon-button { position: static; align-self: center; flex-shrink: 0; }
+  .app.lunar-ui .flyout :is(.muted,.data-note,label,h3,.site-text small,.site-text > span) { font-size: 15px; line-height: 1.45; }
+  .app.lunar-ui .flyout :is(.site-text strong,.site-search,select,input[type="number"],input[type="datetime-local"]) { font-size: 16px; }
+  .app.lunar-ui .flyout .site-list { max-height: none; overflow: visible; }
+  .app.lunar-ui .flyout .add-site { font-size: 16px; }
+  .app.lunar-ui .flyout .site-list > button { min-height: 60px; padding: 10px 2px; }
+  .app.lunar-ui .inspector > header { min-height: 0; padding: 0; }
+  .app.lunar-ui .inspector > header > div { padding: 0; }
+  .app.lunar-ui .inspector h1 { font-size: 26px; }
+  .app.lunar-ui .inspector :is(.site-kind,.coordinates,.data-note,.condition-reading p,.condition-reading small,.condition-reading strong,.condition-geometry summary),
+  .app.lunar-ui .inspector :is(.sky-link,.full-width,.button-row > button),
+  .app.lunar-ui .solar-info :is(p,.data-note) { font-size: 16px; line-height: 1.45; }
+  .app.lunar-ui .inspector .quality { margin: 0; padding: 7px 10px; font-size: 14px; flex-wrap: wrap; }
+  .app.lunar-ui .inspector .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app.lunar-ui .inspector .metrics-grid strong { font-size: 24px; }
+  .app.lunar-ui .inspector .event-list { gap: 8px; }
+  .app.lunar-ui .inspector .event-list :is(span,small) { font-size: 13px; }
+  .app.lunar-ui .comparison-matrix :is(th,td) { min-width: 87px; padding: 8px 6px; }
+  .app.lunar-ui .comparison-matrix th:first-child { min-width: 86px; max-width: 106px; }
+  .app.lunar-ui .comparison-scroll-hint { display: block; }
+  .app.lunar-ui .comparison-fields { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .app.lunar-ui .comparison-fields :is(label,input,select), .app.lunar-ui .nearby-form :is(label,input) { font-size: 16px; }
+  .app.lunar-ui .comparison-fields :is(input,select) { min-height: 44px; }
+  .app.lunar-ui .compare-tray .compare-grid { gap: 14px; }
+  .app.lunar-ui .compare-column { padding: 0; border: 0; }
+  .app.lunar-ui .compare-heading { flex-wrap: wrap; margin-bottom: 0; }
+  .app.lunar-ui .compare-heading :is(strong,small) { white-space: normal; }
+  .app.lunar-ui .compare-tray h2 { flex-basis: 110px; font-size: 18px; }
+  .app.lunar-ui .compare-tray > header .button-row > button { display: inline-flex; font-size: 14px; padding: 7px; min-height: 44px; }
+  .app.lunar-ui .compare-tray .comparison-takeaway { font-size: 17px; }
+  .app.lunar-ui .comparison-explainer { margin-bottom: 14px; }
+  .app.lunar-ui .nearby-limit-fields { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .app.lunar-ui .nearby-results li { align-items: flex-start; font-size: 16px; }
+  .app.lunar-ui .lunar-orbit-nav {
+    inset: var(--phone-map-top) auto auto 8px;
+    transform: none;
+    max-width: calc(100vw - 108px);
+  }
+  .app.lunar-ui .lunar-orbit-nav > button { min-height: 44px; }
+  .app.lunar-ui :is(.lunar-camera, .has-inspector .lunar-camera) {
+    top: var(--phone-map-top);
+    right: 8px;
+    display: flex;
+  }
+  .app.lunar-ui .lunar-settings {
+    inset: calc(var(--phone-top) + 162px) 8px calc(var(--phone-nav) + 8px);
+    max-height: none;
+  }
+  .app.lunar-ui .lunar-cursor {
+    bottom: var(--phone-bottom);
+    left: 8px;
+    right: 8px;
+    min-height: 0;
+    background: var(--panel);
+  }
+  .app.lunar-ui .lunar-canvas .cesium-viewer-bottom { left: 8px; bottom: calc(var(--phone-bottom) + 80px); }
+  .app.lunar-ui .lunar-stream-state { top: calc(var(--phone-map-top) + 78px); left: 8px; }
+  .app.lunar-ui .lunar-view-mode { top: calc(var(--phone-map-top) + 112px); left: 8px; }
+  .app.lunar-ui:has(.lunar-canvas) .horizon-readout { top: auto; bottom: calc(var(--phone-bottom) + 72px); left: 8px; max-height: 32dvh; }
+  .app.lunar-ui.solar-mode .solar-catalog {
+    inset: var(--phone-map-top) 16px auto;
+    max-height: none;
+    padding: 0;
+    overflow: visible;
+  }
+  .app.lunar-ui.solar-mode .solar-catalog :is(h2,p,button) { display: none; }
+  .app.lunar-ui.solar-mode .solar-catalog .phone-destination { display: block; }
+  .app.lunar-ui.solar-mode .solar-catalog select { width: 100%; }
+  .app.lunar-ui .solar-controls { inset: auto 8px calc(var(--phone-bottom) + 8px); width: auto; min-height: 44px; border-radius: 10px; }
+  .app.lunar-ui .solar-controls :is(button,label) { min-height: 44px; font-size: 14px; }
+  .app.lunar-ui[data-phone-details="open"] .solar-details-toggle { display: none; }
+  .app.lunar-ui[data-phone-details="open"] .solar-info-content[hidden] { display: block; }
+}

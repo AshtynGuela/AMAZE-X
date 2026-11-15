@@ -1,0 +1,30 @@
+{
+  "base": "https://lu-see.onrender.com",
+  "scope": "Two first requests for distinct south-polar coordinates. Existing Render service and NASA raster caches were retained. Runs overlapped, so ready times can include queueing. These are API timings for full terrain profiles, starting before the first request and ending after reading and verifying the HTTP 200 response. HTTP 202 is not readiness.",
+  "requestedQuality": "full",
+  "results": [
+    {
+      "testedUtc": "2026-11-15T04:21:16.891Z",
+      "lat": -89.21367,
+      "lon": 116.12841,
+      "quality": "full",
+      "rays": 720,
+      "resolutionM": 20,
+      "readyMs": 109484.4,
+      "warmMs": 686.7,
+      "calculationSeconds": 106.992
+    },
+    {
+      "testedUtc": "2026-11-15T04:23:00.707Z",
+      "lat": -88.43762,
+      "lon": -32.66183,
+      "quality": "full",
+      "rays": 720,
+      "resolutionM": 20,
+      "readyMs": 150061.0,
+      "warmMs": 210.8,
+      "calculationSeconds": 102.125
+    }
+  ],
+  "limits": "Does not time the browser's preview/quick/full sequence, ephemeris download, rendering, a cold Render start, or a cache-cleared run."
+}

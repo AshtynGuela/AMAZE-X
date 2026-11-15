@@ -43,7 +43,7 @@ Analysis: lookup_site and get_conditions read real positions and mission totals;
 Planning: plan_landing opens or runs the native planner with the user's surface duration and limits; mode next searches farther ahead without relaxing the limits. rank_nearby opens/runs nearby-site ranking. create_scenario adds a plan, select_scenario inspects it, travel_to animates the historical flight estimate and landing. A mission needs a user-chosen surface duration.
 Places and settings: create_site adds explicit lunar coordinates. set_observer changes sensor/mast height and the minimum usable Earth angle. open_panel opens sites, time, layers, settings, comparison, timeline, landing, nearby, help, sources or date-slip analysis.
 Output: export_report starts a JSON/CSV download of calculated results. share_session copies a link. Missing data must finish loading before a report is exported.
-Rocky: set_rocky changes his size, animation, sound, typing and idle speech. Right-click/long-press him for these settings; drag his resize handle or pinch him to resize. He moves across the screen only when the user drags him.
+Rocky: set_rocky changes his size, animation, sound, typing and idle speech. Right-click or long-press Rocky and choose Resize for his size and chat width. Drag him to move him around the screen.
 Map images are visual evidence; scientific numbers still require calculation tools. Use inspect_app to read current settings. use_app_feature queues a validated native app action; do not claim it has happened until the client reports success.`;
 
 export function actionLabel(action, sites = []) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { flightEstimate } from "../engine/mission-history.mjs";
-import { comparisonTakeaway, missionHours, timeAmount } from "../engine/comparison.mjs";
+import { comparisonTakeaway, hoursAndMinutes, missionHours, timeAmount } from "../engine/comparison.mjs";
 import {
   conditions,
   interpolate,
@@ -16,6 +16,7 @@ import {
   Packet,
   packetFor,
   ensureData,
+  type Site,
 } from "./store";
 export function useMetrics(scenario: Scenario | undefined) {
   const state = useScout(),
@@ -244,16 +245,112 @@ export function TimelineLane({
     </div>
   );
 }
-export function ComparisonBoard({scenarios}:{scenarios:Scenario[]}) {
+export function ComparisonForm({ sites, planLanding }: { sites: Site[]; planLanding: () => void }) {
+  const state = useScout();
+  const baseline = state.scenarios[0];
+  const [siteId, setSiteId] = useState(state.selected);
+  const [date, setDate] = useState(() => new Date(
+    baseline && baseline.epoch !== "live" ? Date.parse(baseline.epoch) : state.time,
+  ).toISOString().slice(0, 16));
+  const [days, setDays] = useState(String(baseline?.durationDays ?? 1));
+  const [error, setError] = useState("");
+
+  if (state.scenarios.length >= 4) return <p className="data-note">Remove a plan to add another.</p>;
+  return <form className="comparison-form" id="comparison-form" onSubmit={event => {
+    event.preventDefault();
+    const start = Date.parse(date + "Z");
+    const durationDays = Number(days);
+    const site = sites.find(site => site.id === siteId);
+    if (!site || !Number.isFinite(start) || start < Date.UTC(1969, 0, 1) ||
+        !Number.isFinite(durationDays) || durationDays < 0.1 || durationDays > 90 ||
+        start + durationDays * DAY >= Date.UTC(2041, 0, 1)) {
+      setError("Choose a site and a stay of 0.1–90 Earth days that fits between 1969 and 2040.");
+      return;
+    }
+    const current = useScout.getState();
+    const id = ["A", "B", "C", "D"].find(id => !current.scenarios.some(plan => plan.id === id));
+    if (!id) return;
+    const epoch = new Date(start).toISOString();
+    if (current.scenarios.some(plan => plan.siteId === siteId && plan.epoch === epoch && plan.durationDays === durationDays &&
+        !plan.profile && !plan.flightProfile && (!plan.arrayMode || plan.arrayMode === "horizontal"))) {
+      setError("That site, date and stay are already in the comparison. Change one to add another plan.");
+      return;
+    }
+    setError("");
+    current.set({ scenarios: [...current.scenarios, { id, siteId, epoch, durationDays }] });
+    if (current.scenarios.length > 0) {
+      const tray = event.currentTarget.closest(".compare-tray");
+      requestAnimationFrame(() => {
+        tray?.scrollTo({ top: 0 });
+        tray?.querySelector("h2")?.focus({ preventScroll: true });
+      });
+    }
+  }}>
+    <h3>{state.scenarios.length ? "Add another plan" : "Choose a site and landing date"}</h3>
+    <div className="comparison-fields">
+      <label>Site<select id="comparison-site" required value={siteId} onChange={event => setSiteId(event.target.value)}>
+        {!sites.some(site => site.id === siteId) && <option value="">Choose a site</option>}
+        {sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
+      </select></label>
+      <label>Landing date (UTC)<input required type="datetime-local" value={date} onChange={event => setDate(event.target.value)} /></label>
+      <label>Stay (Earth days)<input required type="number" min="0.1" max="90" step="any" value={days} onChange={event => setDays(event.target.value)} /></label>
+    </div>
+    <div className="comparison-actions">
+      <button className="primary" type="submit">Add to comparison</button>
+      <button type="button" onClick={() => {
+        if (sites.some(site => site.id === siteId)) state.select(siteId);
+        planLanding();
+      }}>Plan landing</button>
+    </div>
+    {error && <p role="alert" className="error-text">{error}</p>}
+  </form>;
+}
+
+export function ComparisonBoard({ scenarios, onInspect }: { scenarios: Scenario[]; onInspect?: () => void }) {
   const a=useMetrics(scenarios[0]),b=useMetrics(scenarios[1]),c=useMetrics(scenarios[2]),d=useMetrics(scenarios[3]);
   const results=[a,b,c,d];
+  const state = useScout();
+  const rows = scenarios.map((scenario, index) => {
+    const terrain = state.terrains[scenario.siteId];
+    return {
+      ...scenario,
+      metrics: results[index]?.metrics,
+      error: results[index]?.error || state.errors[packetKey(scenario.siteId, state.mastM)],
+      name: [...state.sites, ...state.custom].find(site => site.id === scenario.siteId)?.name ?? scenario.siteId,
+      quality: !terrain ? "Smooth horizon" : terrain.quality && terrain.quality !== "full" ? "Terrain preview" : "Detailed terrain",
+    };
+  });
+  const provisional = rows.some(row => row.metrics && row.quality !== "Detailed terrain");
+  const unavailable = rows.some(row => row.error);
   return <>
-    <p className="comparison-takeaway" role="status">{comparisonTakeaway(scenarios.map((scenario,index)=>({...scenario,metrics:results[index]?.metrics,error:results[index]?.error})))}</p>
-    <p className="comparison-explainer">Compare time in sunlight and time with a clear view of Earth. Contact also uses your antenna's minimum angle.</p>
-    <div className="compare-grid">{scenarios.map((scenario,index)=><ScenarioColumn key={scenario.id} scenario={scenario} analysis={results[index]}/>)}</div>
+    <p className="comparison-takeaway" role="status">{unavailable
+      ? "Some plan data could not load. Use Retry data on the affected plan."
+      : <>{provisional && "Preliminary · "}{comparisonTakeaway(rows, true)}</>}</p>
+    {rows.length > 2 && <p className="data-note comparison-scroll-hint">Scroll the table sideways to see every plan.</p>}
+    <div className="comparison-matrix-scroll" role="region" aria-label="Plan results" tabIndex={rows.length > 2 ? 0 : undefined}>
+      <table className="comparison-matrix">
+        <thead><tr><th scope="col">Over the stay</th>{rows.map(row =>
+          <th scope="col" key={row.id}><span>Plan {row.id}</span>{row.name}</th>)}</tr></thead>
+        <tbody>
+          <tr><th scope="row">Sunlight</th>{rows.map(row =>
+            <td key={row.id}>{row.metrics ? hoursAndMinutes(missionHours(row.metrics.sunlitPct, row.durationDays)) : row.error ? "Unavailable" : "Loading…"}</td>)}</tr>
+          <tr><th scope="row">Earth contact</th>{rows.map(row =>
+            <td key={row.id}>{row.metrics ? hoursAndMinutes(missionHours(row.metrics.earthDtePct, row.durationDays)) : "—"}</td>)}</tr>
+          <tr><th scope="row">Longest darkness</th>{rows.map(row =>
+            <td key={row.id}>{row.metrics ? hoursAndMinutes(row.metrics.longestDarkH) : "—"}</td>)}</tr>
+          <tr><th scope="row">Landing (UTC)</th>{rows.map(row =>
+            <td key={row.id}>{row.epoch === "live" ? "Follows clock" : <time dateTime={row.epoch}>{row.epoch.slice(0, 10)}<br />{row.epoch.slice(11, 16)}</time>}</td>)}</tr>
+          <tr><th scope="row">Stay</th>{rows.map(row => <td key={row.id}>{row.durationDays} d</td>)}</tr>
+          <tr><th scope="row">Horizon model</th>{rows.map(row =>
+            <td key={row.id}>{row.metrics ? row.quality : "—"}</td>)}</tr>
+        </tbody>
+      </table>
+    </div>
+    <p className="comparison-explainer">Earth contact applies your {state.minAntennaEl}° minimum antenna angle.</p>
+    <div className="compare-grid">{scenarios.map((scenario,index)=><ScenarioColumn key={scenario.id} scenario={scenario} analysis={results[index]} onInspect={onInspect}/>)}</div>
   </>;
 }
-export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analysis?:any }) {
+export function ScenarioColumn({ scenario, analysis, onInspect }: { scenario: Scenario; analysis?: any; onInspect?: () => void }) {
   const flight = scenario.epoch !== "live" && scenario.flightProfile
     ? flightEstimate(Date.parse(scenario.epoch), scenario.flightProfile)
     : null;
@@ -264,6 +361,10 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
     calculated = useMetrics(analysis===undefined?scenario:undefined),
     result = analysis===undefined?calculated:analysis,
     m = result?.metrics,
+    terrain = state.terrains[scenario.siteId],
+    detailed = !!terrain && (!terrain.quality || terrain.quality === "full"),
+    packet = m && packetFor(state, scenario.siteId, m.start, scenario.durationDays),
+    startConditions = packet && conditions(packet, m.start, getMask(terrain, state.mastM), state.minAntennaEl),
     error =
       result?.error || state.errors[packetKey(scenario.siteId, state.mastM)];
   return (
@@ -281,6 +382,7 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
                 ? { time: Date.parse(scenario.epoch) }
                 : {}),
             });
+            onInspect?.();
           }}
         >
           <strong>{site?.name}</strong>
@@ -325,6 +427,8 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
           </button>
         </p>
       )}
+      <details className="comparison-plan-details">
+      <summary>Plan {scenario.id} details</summary>
       <dl className="comparison-values">
         <dt>Mission duration</dt>
         <dd>{scenario.durationDays} {scenario.durationDays===1?"day":"days"}</dd>
@@ -342,6 +446,15 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
         <dd>{m ? `${timeAmount(missionHours(m.earthDtePct,scenario.durationDays))} (${m.earthDtePct.toFixed(1)}%)` : "—"}</dd>
         <dt>Longest darkness</dt>
         <dd>{m ? m.longestDarkH.toFixed(1) + " h" : "—"}</dd>
+        <dt>Sun elevation at landing</dt>
+        <dd>{startConditions ? startConditions.sun.el.toFixed(2) + "°" : "—"}</dd>
+        {m && (["sun", "earth"] as const).map(body => {
+          const event = m.events?.find((event: { body: string; kind: string }) => event.body === body && event.kind === "set");
+          return <div className="comparison-event" key={body}>
+            <dt>{body === "sun" ? "Sunset" : "Earthset"} after landing</dt>
+            <dd>{event ? durationLabel(event.time - m.start) : "None in loaded dates"}</dd>
+          </div>;
+        })}
         <dt>Earth-shadow exposure · Sun above terrain</dt>
         <dd>{m ? m.eclipseHours.toFixed(2) + " h" : "—"}</dd>
         <dt>Relative solar power · {scenario.arrayMode || "horizontal"}</dt>
@@ -360,7 +473,8 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
           : "Smooth horizon"}{" "}
         · {m ? "10-minute steps" : "Loading sky positions"}
       </p>
-      {result?.rules?.length > 0 && (
+      {!detailed && !!m && !!scenario.profile && <p className="data-note">Detailed terrain is needed to check mission limits.</p>}
+      {detailed && result?.rules?.length > 0 && (
         <ul className="rules">
           {result.rules.map((r) => (
             <li key={r.id} className={r.passed ? "pass" : "fail"}>
@@ -369,6 +483,7 @@ export function ScenarioColumn({ scenario,analysis }: { scenario: Scenario;analy
           ))}
         </ul>
       )}
+      </details>
     </section>
   );
 }

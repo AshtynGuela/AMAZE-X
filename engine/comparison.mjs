@@ -3,7 +3,14 @@ export const missionHours = (pct, days) => Number.isFinite(pct) && Number.isFini
 export function timeAmount(hours) {
   return hours < 1 ? `${number.format(hours*60)} min` : `${number.format(hours)} h`;
 }
-export function comparisonTakeaway(rows) {
+export function hoursAndMinutes(hours) {
+  const minutes = Math.round(hours * 60);
+  const wholeHours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (!wholeHours) return `${remainder} min`;
+  return remainder ? `${wholeHours} h ${remainder} min` : `${wholeHours} h`;
+}
+export function comparisonTakeaway(rows, useAntennaLimit = false) {
   const ready = rows.filter(row => row.metrics && !row.error);
   if (ready.length < 2) return rows.length < 2 ? "Add another plan to see which gives you more sunlight or Earth visibility." : "Calculating the trade-off. The comparison will appear when both plans have complete data.";
   if(ready.length<rows.length)return "Waiting for the remaining plans. Retry any plan whose data could not load.";
@@ -13,8 +20,10 @@ export function comparisonTakeaway(rows) {
     const [first,second]=ranked, last=ranked.at(-1);
     if(Math.abs(first.hours-last.hours)<1/60)return `The plans offer about the same ${description}.`;
     if(Math.abs(first.hours-second.hours)<1/60)return `${first.label??`Plan ${first.id}`} and ${second.label??`plan ${second.id}`} tie for the most ${description}.`;
-    return `${first.label??`Plan ${first.id}`} gives ${timeAmount(first.hours-second.hours)} more ${description} than ${second.label??`plan ${second.id}`}.`;
+    const difference = useAntennaLimit ? hoursAndMinutes(first.hours-second.hours) : timeAmount(first.hours-second.hours);
+    return `${first.label??`Plan ${first.id}`} gives ${difference} more ${description} than ${second.label??`plan ${second.id}`}.`;
   };
-  const text = [sentence("sunlitPct","sunlight"),sentence("earthVisiblePct","Earth visibility")].filter(Boolean).join(" ");
+  const contact = useAntennaLimit ? sentence("earthDtePct", "Earth contact") : sentence("earthVisiblePct", "Earth visibility");
+  const text = [sentence("sunlitPct","sunlight"),contact].filter(Boolean).join(" ");
   return text + (new Set(ready.map(row=>row.durationDays)).size>1 ? " These totals cover different lengths of stay." : "");
 }

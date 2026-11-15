@@ -2,7 +2,9 @@ import { chromium, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { encodeSession } from '../src/share.mjs';
-const base=(process.env.BASE_URL??'http://127.0.0.1:5175').replace(/\/$/,''),root='data/validation/ui-eclipse-export',shots='.impeccable/review/lunar-science';
+const base=(process.env.BASE_URL??'http://127.0.0.1:5175').replace(/\/$/,'');
+const output = process.env.SCIENCE_OUTPUT ?? 'data/validation';
+const root=output+'/ui-eclipse-export',shots=process.env.SCIENCE_OUTPUT ? output+'/screenshots' : '.impeccable/review/lunar-science';
 await fs.mkdir(root,{recursive:true});await fs.mkdir(shots,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const errors=[],state={scenarios:['apollo11','im1'].map((siteId,i)=>({id:i?'B':'A',siteId,epoch:'2025-03-14T00:00:00.000Z',durationDays:1,arrayMode:'tracking',arrayAzimuth:0})),custom:[],mastM:2,minAntennaEl:5,time:Date.parse('2025-03-14T07:00Z'),selected:'apollo11',view:'globe',mode:'plain',activeScenarioId:'A'};
@@ -51,7 +53,8 @@ try {
   if(process.env.CAPTURE_UI==='1')await page.screenshot({path:shots+'/desktop.png',animations:'disabled',timeout:45000});
   // One browser and one map at a time; resizing exercises the shipped layout.
   await page.setViewportSize({width:390,height:844});
-  await page.getByRole('button',{name:'Show inspector',exact:true}).click();
+  await page.getByRole('button',{name:'Close tools',exact:true}).click();
+  await page.getByRole('button',{name:'Site details',exact:true}).click();
   await expect(page.locator('.inspector')).toBeVisible();
   await expect(page.locator('.eclipse-status')).toContainText('none');
   const mobile=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));assert.equal(mobile.width,mobile.scrollWidth);
@@ -59,5 +62,5 @@ try {
   await page.getByRole('button',{name:'Close details',exact:true}).click();await expect(page.locator('.inspector')).not.toBeVisible();
   assert.deepEqual(errors,[]);
   const result={testedUtc:new Date().toISOString(),base,realApi:true,rockyRenderingExcluded:true,twoSiteComparison:takeaway,zeroDirectPowerInTotality:true,modesPreserveReadings:true,csvAndJsonDownloaded:true,missionTimeBasisPreserved:true,keyboardPlanner:{focusEntry:true,tabWrap:true,escape:true,focusRestored:true},mobileInspectorOpenClose:true,mobile,visualCaptures:process.env.CAPTURE_UI==='1',physicalPhoneTested:false,errors};
-  await fs.writeFile('data/validation/lunar-science-browser.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+  await fs.writeFile(output+'/lunar-science-browser.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
 } finally {await browser.close()}

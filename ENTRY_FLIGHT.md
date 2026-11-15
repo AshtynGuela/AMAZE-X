@@ -1,5 +1,7 @@
 # Opening flight cutscene
 
+This page records the previous spaceship intro. The current welcome page fades into the Solar System. See [README.md](README.md) for the current entry controls and browser check.
+
 Current behavior: an upward scroll, swipe, click or Enter/Space triggers a ~4.8-second automatic cutscene once models are ready. The astronaut welcome fades to a star-only backdrop; the rocket rises from below, side boosters peel away, then the shuttle detaches and keeps flying upward. The Solar System fades in behind it, with map controls appearing at the end. No continued scrolling or reverse gesture is required. Escape skips, reduced motion uses a short fade without model downloads, and the cutscene holds its end fade briefly if the map canvas is still preparing. `test-entry-flight-browser.mjs` now runs `test-entry-cutscene-browser.mjs`; newer evidence is recorded separately in `entry-cutscene-browser.json`. The earlier scroll-scrubbed results below are historical.
 
 Current verification: production build, TypeScript and three focused staging/timing tests passed. A real-clock browser run passed automatic single-scroll completion, star backdrop, overlay removal, restored controls, click entry and reduced motion without rocket downloads; Rocky rendering was excluded. The public frontend hashes match the local build and health returns HTTP 200 for release `1872f2b`. Evidence: `entry-cutscene-browser.json` and `entry-cutscene-hosted.json` in `data/validation/`.

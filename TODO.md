@@ -2,7 +2,7 @@
 
 ## Priorities from the challenge evaluation — 15 November 2026
 
-- [x] **Opening flight:** the original scrubbed intro has been replaced by an automatic cutscene after an upward scroll/swipe or click. Fade to stars, rocket ascent, boosters and shuttle separation, then upward departure with a Solar System fade. Optimized assets total 7.94 MB; reduced motion bypasses the models. See ENTRY_FLIGHT.md for current and historical verification.
+- [x] **Welcome fade:** scroll up, swipe up or click to fade into the Solar System. Reduced motion opens the map immediately. ENTRY_FLIGHT.md records the earlier spaceship intro.
 
 - [x] Current UX pass: smaller header, short panel/chat/dialog transitions, control feedback, and reduced-motion support.
 - [x] Rocky replies: one speech block, no secondary exposition, and consistent Question/Statement endings.

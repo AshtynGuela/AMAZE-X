@@ -27,24 +27,7 @@
 }
 .mission-welcome:focus { outline: none; }
 .mission-welcome { opacity: 1; transition: opacity 420ms ease; }
-.mission-welcome[data-scroll-started] { opacity: 0; pointer-events: none; }
-.welcome-cutscene-stars {
-  position: absolute; inset: 0; z-index: 88; pointer-events: none;
-  background: #000 url('/assets/site-ui/starfield.png') center / cover no-repeat;
-  opacity: clamp(0,calc((1 - var(--welcome-progress,0)) / .36),1);
-}
-.welcome-flight {
-  position: absolute;
-  inset: 0;
-  z-index: 95;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  contain: strict;
-}
-.welcome-flight canvas { display: block; width: 100%; height: 100%; }
-.welcome-flight[data-state=unavailable] { display: none; }
-@media (prefers-reduced-motion: reduce) { .welcome-flight { display: none; } }
+.mission-welcome[data-fading] { opacity: 0; pointer-events: none; }
 .mission-welcome__space {
   position: absolute;
   inset: 0;
@@ -162,7 +145,7 @@
   transition: opacity 180ms ease-out;
 }
 .mission-welcome__scroll-hint svg { opacity: .65; }
-.mission-welcome[data-scroll-started] .mission-welcome__scroll-hint { animation: none; opacity: 0; }
+.mission-welcome[data-fading] .mission-welcome__scroll-hint { animation: none; opacity: 0; }
 .mission-welcome :is(a,button):focus-visible { outline-color: #fff; }
 .mission-welcome__credits {
   display: flex;
@@ -216,19 +199,12 @@
   .mission-welcome__credits { padding-bottom: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .mission-welcome { transition: none; }
   /* Preserve the requested ambient artwork; entry follows input without inertia. */
   .mission-welcome--ambient :is(.mission-welcome__stars,.mission-welcome__astronaut,.mission-welcome__light,.mission-welcome__glow,.mission-welcome__float,.mission-welcome__credits) { animation: var(--ambient-animation) !important; }
   .mission-welcome--ambient :is(.mission-welcome__float,.mission-welcome__credits):focus-within { animation-play-state: paused !important; }
 }
 
-/* A single short flight bridges the welcome artwork and the map. */
-.app--entering :is(.world,.solar-labels) {
-  transform: none;
-  opacity: clamp(0,calc((var(--welcome-progress,0) - .62) / .34),1);
-}
-.app[data-entry-cutscene] :is(.topbar,.instrument-rail,.clockbar,.view-toolbar,.phone-map-controls,.solar-catalog,.solar-info,.solar-controls,.inspector,.lunar-cursor,.lunar-orbit-nav) {
-  opacity: clamp(0,calc((var(--welcome-progress,0) - .88) / .12),1);
-}
 @keyframes welcome-stars-drift {
   0%, 100% { transform: scale(1.08) translate3d(-22px, 14px, 0) rotate(-.45deg); }
   50% { transform: scale(1.12) translate3d(24px, -18px, 0) rotate(.45deg); }

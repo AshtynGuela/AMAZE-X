@@ -1,84 +1,52 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import {cutsceneProgress} from "../engine/entry-flight.mjs";
-import type {FlightDriver} from "./EntryFlight";
+import { useEffect, useRef, useState } from "react";
 import { APP_NAME, APP_EXPANSION } from "../engine/app-actions.mjs";
 import "./welcome.css";
 
-type Props = { ready: boolean; begin: () => void; enter: () => void; skip: () => void; prepare: () => void };
-const EntryFlight=lazy(()=>import('./EntryFlight'));
-class FlightBoundary extends Component<{onReady:()=>void;children:ReactNode},{failed:boolean}>{
-  state={failed:false};
-  static getDerivedStateFromError(){return {failed:true}}
-  componentDidCatch(){this.props.onReady()}
-  render(){return this.state.failed?null:this.props.children}
-}
+type Props = { ready: boolean; begin: () => void; enter: () => void; skip: () => void; prepare: () => Promise<unknown> };
 
 export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
   const panel = useRef<HTMLElement>(null);
-  const [flightStarted,setFlightStarted]=useState(false);
-  const [reducedMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const flightReady=useRef(reducedMotion);
-  const mapStarted=useRef(false);
-  const flight=useRef<FlightDriver>({progress:0,paint:null});
-  const finishPreparation=()=>{
-    flightReady.current=true;
-    if(!mapStarted.current){mapStarted.current=true;latest.current.begin();}
-    wake.current();
-  };
-  const latest = useRef({ ready, begin, enter, prepare });
-  latest.current = { ready, begin, enter, prepare };
-  const drive = useRef<(delta: number, finish?: boolean) => void>(() => {});
-  const wake = useRef<() => void>(() => {});
+  const callbacks = useRef({ begin, enter, prepare });
+  callbacks.current = { begin, enter, prepare };
+  const started = useRef(false);
+  const [entering, setEntering] = useState(false);
+  const [fading, setFading] = useState(false);
+  const [reducedMotion] = useState(() => matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  function startEntry() {
+    if (started.current) return;
+    started.current = true;
+    callbacks.current.begin();
+    setEntering(true);
+  }
+
+  useEffect(() => {
+    if (!entering) return;
+    if (ready || reducedMotion) {
+      setFading(true);
+      return;
+    }
+    // A slow or unavailable 3D renderer must not trap users on the welcome page.
+    const timeout = window.setTimeout(() => setFading(true), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [entering, ready, reducedMotion]);
+
+  useEffect(() => {
+    if (!fading) return;
+    const timeout = window.setTimeout(() => callbacks.current.enter(), reducedMotion ? 0 : 520);
+    return () => window.clearTimeout(timeout);
+  }, [fading, reducedMotion]);
+
   useEffect(() => {
     const node = panel.current;
     if (!node) return;
-    const root = node.parentElement!;
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let displayed = 0, frame = 0, before = 0;
-    let started = false, completed = false, prepared = false, touchY: number | null = null;
-    const warm = () => {
-      if (prepared) return;
-      prepared = true;
-      latest.current.prepare();
-    };
-    const tick = (now: number) => {
-      frame = 0;
-      const dt = before && !document.hidden ? now-before : 0;
-      before = now;
-      displayed=cutsceneProgress(displayed,dt,flightReady.current,latest.current.ready,reduced);
-      root.style.setProperty("--welcome-progress", String(displayed));
-      root.dataset.entryProgress=displayed.toFixed(4);
-      flight.current.progress=displayed;flight.current.paint?.(displayed);
-      if (displayed >= .999 && (latest.current.ready||reduced) && !completed) {
-        completed = true;
-        latest.current.enter();
-        return;
-      }
-      if(started&&!completed)frame=requestAnimationFrame(tick);
-    };
-    const animate = () => {
-      if (started&&!frame && !completed) { before = 0; frame = requestAnimationFrame(tick); }
-    };
-    wake.current = animate;
-    drive.current = (delta, finish = false) => {
-      if (completed||started) return;
-      warm();
-      if (!started && (delta > 0 || finish)) {
-        started = true;
-        node.dataset.scrollStarted = "true";
-        root.dataset.entryCutscene="true";
-        setFlightStarted(true);
-        if(reducedMotion){mapStarted.current=true;latest.current.begin();}
-      }
-      if (!started) return;
-      animate();
-    };
+    let touchY: number | null = null;
+    const warm = () => { void callbacks.current.prepare().catch(() => {}); };
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
-      if (event.deltaY >= 0 && !started) return;
+      if (event.deltaY >= 0 && !started.current) return;
       event.preventDefault();
-      const pixels = -event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1);
-      drive.current(pixels);
+      startEntry();
     };
     const touchStart = (event: TouchEvent) => {
       touchY = event.touches.length === 1 ? event.touches[0].clientY : null;
@@ -86,29 +54,20 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     };
     const touchMove = (event: TouchEvent) => {
       if (touchY === null || event.touches.length !== 1) return;
-      const y = event.touches[0].clientY, delta = touchY - y;
-      touchY = y;
+      const y = event.touches[0].clientY;
       const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
-      if (!started && (!atBottom || delta <= 0)) return;
+      if (!started.current && (!atBottom || touchY - y < 18)) return;
       event.preventDefault();
-      drive.current(delta);
+      startEntry();
     };
     const touchEnd = () => { touchY = null; };
-    node.addEventListener("pointermove", warm, { passive: true });
-    // Keep the gesture attached to the viewport as the outgoing panel moves
-    // away from the pointer; the map stays inert until the reveal completes.
+    node.addEventListener("pointermove", warm, { passive: true, once: true });
     window.addEventListener("wheel", wheel, { passive: false });
     window.addEventListener("touchstart", touchStart, { passive: true });
     window.addEventListener("touchmove", touchMove, { passive: false });
     window.addEventListener("touchend", touchEnd);
     window.addEventListener("touchcancel", touchEnd);
     return () => {
-      cancelAnimationFrame(frame);
-      root.style.removeProperty("--welcome-progress");
-      delete root.dataset.entryProgress;
-      delete root.dataset.entryCutscene;
-      drive.current = () => {};
-      wake.current = () => {};
       node.removeEventListener("pointermove", warm);
       window.removeEventListener("wheel", wheel);
       window.removeEventListener("touchstart", touchStart);
@@ -117,7 +76,6 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       window.removeEventListener("touchcancel", touchEnd);
     };
   }, []);
-  useEffect(() => { wake.current(); }, [ready]);
   useEffect(() => {
     const node = panel.current;
     if (!node) return;
@@ -138,29 +96,36 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
     node.focus({ preventScroll: true });
     return () => { observer.disconnect(); previous.forEach((inert, child) => { child.inert = inert; }); };
   }, []);
-  return <><section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
-    className="mission-welcome mission-welcome--ambient" data-scene-ready={ready}
+  return <section ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-scroll-hint"
+    className="mission-welcome mission-welcome--ambient" data-scene-ready={ready} data-fading={fading || undefined}
+    onTransitionEnd={event => {
+      if (fading && event.target === event.currentTarget && event.propertyName === "opacity") enter();
+    }}
     onClick={event => {
-      // Credits remain normal links; the rest of the page uses the same reveal
-      // as scrolling, including waiting for the map's first rendered frame.
       if ((event.target as Element).closest("a,button,input,select,textarea")) return;
-      drive.current(0, true);
+      startEntry();
     }}
     onKeyDown={event => {
-      if (["ArrowUp", "PageUp", "ArrowDown", "PageDown"].includes(event.key)) {
-        event.preventDefault();event.stopPropagation();drive.current((event.key==='ArrowDown'||event.key==='PageDown'?-1:1)*(event.key.startsWith('Page')?220:90));return;
+      if (["ArrowUp", "PageUp"].includes(event.key) ||
+          (event.target === event.currentTarget && ["Enter", " "].includes(event.key))) {
+        event.preventDefault();
+        event.stopPropagation();
+        startEntry();
+        return;
       }
-      if(event.target===event.currentTarget && ["Enter"," "].includes(event.key)){
-        event.preventDefault();event.stopPropagation();drive.current(0,true);return;
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        skip();
       }
-      if (event.key === "Escape") { event.stopPropagation(); skip(); }
       if (event.key !== "Tab") return;
-      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled),a[href]")];
+      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("a[href]")];
       const first = controls[0], last = controls.at(-1);
       if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
-        event.preventDefault(); last?.focus();
+        event.preventDefault();
+        last?.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault(); first?.focus();
+        event.preventDefault();
+        first?.focus();
       }
     }}>
     <div className="mission-welcome__space" aria-hidden="true">
@@ -182,7 +147,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       <p className="mission-welcome__expansion">{APP_EXPANSION}</p>
       <p className="mission-welcome__tagline">Navigate the moon, reactively, accurately.</p>
       <p className="mission-welcome__description">An interactive lunar navigation app to help you discover and evaluate potential lunar landing sites using Horizons.</p>
-      <span className="sr-only" id="welcome-scroll-hint">Scroll up, swipe up, click, or press Enter to launch the short introduction. Escape skips it.</span>
+      <span className="sr-only" id="welcome-scroll-hint">Scroll up, swipe up, click, or press Enter to enter the Solar System. Escape skips it.</span>
       </div>
     </div>
     <footer className="mission-welcome__credits" aria-label="Credits">
@@ -192,10 +157,5 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
         <a className="mission-welcome__challenge" href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/" target="_blank" rel="noreferrer">For the NASA Space Apps Challenge</a>
       </div>
     </footer>
-  </section>
-  {flightStarted&&<div className="welcome-cutscene-stars" aria-hidden="true"/>}
-  {flightStarted&&!reducedMotion&&<FlightBoundary onReady={finishPreparation}><Suspense fallback={null}>
-    <EntryFlight driver={flight} onReady={finishPreparation}/>
-  </Suspense></FlightBoundary>}
-  </>;
+  </section>;
 }

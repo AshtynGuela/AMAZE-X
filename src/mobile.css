@@ -227,7 +227,6 @@
   .app .rocky-conversation:not(:has(.rocky-panel)) {
     translate: calc(var(--phone-rocky-left) - var(--rocky-left)) calc(var(--phone-rocky-top) - var(--rocky-top));
   }
-  .app .rocky-resize-handle { left: calc(var(--phone-rocky-left) + var(--phone-rocky-size) - 28px) !important; top: calc(var(--phone-rocky-top) + var(--phone-rocky-size) - 28px) !important; width: 44px; height: 44px; }
   .app .rocky-conversation:has(.rocky-panel) {
     position: fixed; left: max(8px, env(safe-area-inset-left, 0px)) !important; right: max(8px, env(safe-area-inset-right, 0px));
     top: auto !important; bottom: calc(var(--phone-bottom) + 8px) !important; width: auto !important;
@@ -410,7 +409,7 @@
   /* Reading replaces background controls; no labels or mascot cover the text. */
   .app:is([data-phone-details="open"],:has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.rocky-panel,.rocky-menu)) .clockbar { display: none; }
   .app:is([data-phone-details="open"],:has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.rocky-panel,.rocky-menu)) :is(.phone-map-controls,.lunar-cursor,.lunar-stream-state,.horizon-readout,.solar-controls,.solar-catalog,.lunar-view-mode) { visibility: hidden; }
-  .app:is([data-phone-details="open"],:has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.rocky-panel,.rocky-menu)) :is(.rocky-character,.rocky-resize-handle,.rocky-conversation:not(:has(.rocky-panel))) { visibility: hidden; }
+  .app:is([data-phone-details="open"],:has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.lunar-settings,.rocky-panel,.rocky-menu)) :is(.rocky-character,.rocky-conversation:not(:has(.rocky-panel))) { visibility: hidden; }
   .app:has(.flyout,.compare-tray,.timeline-drawer,.slip-tray,.rocky-panel,.rocky-menu) .phone-details-close { visibility: hidden; }
   .app .rocky-conversation:has(.rocky-panel) { top: calc(var(--phone-top) + 8px) !important; bottom: calc(var(--phone-nav) + 8px) !important; z-index: 45; --rocky-chat-height: calc(100dvh - var(--phone-top) - var(--phone-nav) - 16px) !important; }
   .app:has(.rocky-panel) .rocky-overlay, .app:has(.rocky-menu) .rocky-overlay { z-index: 46; }
