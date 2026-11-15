@@ -4,6 +4,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { LoopRepeat, Mesh, MeshPhysicalMaterial, Texture } from "three";
 import { MessageCircle, MoveDiagonal } from "lucide-react";
 import { calmVoice, useDialogueReveal } from "./rocky-voice";
+import Presence from "./Presence";
 
 const movements = [
   ["Random", "Random animations"], ["Attentive", "Attentive"],
@@ -433,12 +434,12 @@ export default function RockyOverlay({ visible, open, thinking, hasInspector, on
       onKeyDown={event=>{if(["ArrowUp","ArrowRight","ArrowDown","ArrowLeft"].includes(event.key)){event.preventDefault();event.stopPropagation();setScale(value=>clamp(value+(["ArrowUp","ArrowRight"].includes(event.key) ? .1 : -.1),.65,3));}}}>
       <MoveDiagonal size={13}/>
     </button>
-    {visible && (open || (speech && pageVisible && !menu && !dragging)) && <div className={`rocky-conversation ${side}`}
+    <Presence show={!!(visible && (open || (speech && pageVisible && !menu && !dragging)))}>{visible && (open || (speech && pageVisible && !menu && !dragging)) && <div className={`rocky-conversation ${side}`}
       style={{ left: bubbleX, width: bubbleWidth, [side === "above" ? "bottom" : "top"]: bubbleY,
         "--rocky-tail": `${clamp(at.x + size / 2 - bubbleX, 18, bubbleWidth - 18)}px`,
         "--rocky-chat-height": `${Math.min(chatHeight, viewport.height * 0.69)}px` } as React.CSSProperties}>
       {open ? renderChat(stream, sound) : <IdleBubble key={speech.id} phrase={speech.text} sound={sound} onFinish={clearSpeech} />}
-    </div>}
+    </div>}</Presence>
     {menu && <div ref={menuRef} className="context-menu rocky-menu" role="menu" aria-label="Rocky options"
       style={{ left: clamp(menu.x, 8, viewport.width - 230),
         ...(menu.y >= viewport.height / 2 ? { bottom: viewport.height - menu.y + 8 } : { top: menu.y + 8 }),

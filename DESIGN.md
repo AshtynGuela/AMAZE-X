@@ -1,5 +1,5 @@
 ---
-name: Very Best Lunar Site Scouter
+name: AMAZE-X
 description: A cinematic Solar System navigation console for traceable lunar site analysis.
 colors:
   accent: "#c9e787"
@@ -109,7 +109,11 @@ components:
     width: "350px"
 ---
 
-# Design System: Very Best Lunar Site Scouter
+# Design System: AMAZE-X
+
+## Current workspace motion and header
+
+The 15 November refinement reduces the Figma workspace header from 78 px to 56 px; phone safe-area space remains additional. The wordmark and mode control fit that height. Side-panel and inspector origins follow their workspace edges; comparison and timeline trays arrive from below. Entrances last 150–240 ms, exits 140 ms, and button feedback 100–130 ms. Exiting panels become inert immediately and can be reopened without waiting. CSS opacity/translate/scale effects avoid animating the terrain renderer. Reduced motion uses an 80 ms opacity change without spatial movement. Rocky uses one text block and retains the supplied bubble, typing and Calm audio behavior. Earlier base-console dimensions below describe the original system; src/site-ui.css and src/motion.css govern the current workspace.
 
 ## Overview
 

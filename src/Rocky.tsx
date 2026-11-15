@@ -15,6 +15,7 @@ import { runAppAction } from "./app-actions";
 import { selectedScenario, useScout, jsonFetch } from "./store";
 import RockyOverlay, { RockyBubble } from "./RockyOverlay";
 import { calmVoice, useDialogueReveal } from "./rocky-voice";
+import { rockySpeech } from "../engine/rocky-speech.mjs";
 
 type Phase = "IDLE" | "ASKING" | "THINKING" | "OPEN" | "ERROR";
 type PendingQuestion = {
@@ -24,15 +25,14 @@ type PendingQuestion = {
   context: Record<string, unknown>;
   history: { role: string; content: string }[];
 };
-function SpokenReply({ speech, details = "", stream, sound }: {
-  speech: string; details?: string; stream: boolean; sound: boolean;
+function SpokenReply({ speech, stream, sound }: {
+  speech: string; stream: boolean; sound: boolean;
 }) {
-  const text = details ? `${speech}\n${details}` : speech;
+  const text = rockySpeech(speech);
   const revealed = useDialogueReveal(text, stream, sound);
   return <RockyBubble>
     <div aria-hidden="true" className="rocky-spoken-text">
-      <p className="speech">{revealed.slice(0, speech.length)}</p>
-      {revealed.length > speech.length && <div className="answer-details">{revealed.slice(speech.length + 1)}</div>}
+      <p className="speech">{revealed}</p>
     </div>
     <p className="sr-only">{text}</p>
   </RockyBubble>;
@@ -122,7 +122,7 @@ export default function Rocky({ snapshot, hasInspector }: { snapshot: () => stri
                 { role: "user", content: h.question },
                 {
                   role: "assistant",
-                  content: `${h.answer.speech}\n${h.answer.details}`.slice(0, 9000),
+                  content: rockySpeech(h.answer.speech),
                 },
               ]),
             };
@@ -282,7 +282,7 @@ export default function Rocky({ snapshot, hasInspector }: { snapshot: () => stri
               )}
               {phase === "OPEN" && answer && (
                 <div className="answer-content">
-                  <SpokenReply key={lastQuestion.current} speech={answer.speech} details={answer.details}
+                  <SpokenReply key={lastQuestion.current} speech={answer.speech}
                     stream={stream && animateReply} sound={sound} />
                   {answer.evidence?.length > 0 && (
                     <details>

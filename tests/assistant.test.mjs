@@ -93,6 +93,7 @@ test("text-only request may fall back and must still pass answer validation", as
       dependencies,
     );
     assert.ok(answer.model.includes("GPT-OSS"));
+    assert.match(answer.speech, /(?:Statement\.|Question\?|Warning\.)$/);
     assert.equal(calls.length, 2);
     assert.equal(answer.evidence.length, 0);
   } finally {

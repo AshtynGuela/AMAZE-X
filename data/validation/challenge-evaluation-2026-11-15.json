@@ -1,0 +1,245 @@
+{
+  "evaluatedUtc": "2026-11-15T00:45:20.880Z",
+  "revision": "8dbce6998e51b0369ac20bdec652d62e26e5ccdd",
+  "environment": "Local production server; headless Chromium/SwiftShader for workflow tests",
+  "officialChallenge": {
+    "url": "https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=details",
+    "lastPublishedAt": "2026-11-13T03:46:21.789089Z",
+    "interpretation": "Seven suggested objectives; potential considerations optional. No official weighted score assigned."
+  },
+  "automated": {
+    "javascript": {
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0
+    },
+    "python": {
+      "passed": 18,
+      "failed": 0
+    },
+    "productionBuild": {
+      "passed": true,
+      "seconds": 37.36,
+      "lunarGlobeMinifiedKB": 4259.32,
+      "lunarGlobeGzipKB": 1145.48,
+      "sizeWarning": true
+    }
+  },
+  "spice": {
+    "validatedUtc": "2026-11-15T00:14:00.705Z",
+    "directions": 216,
+    "maxDirectionErrorDeg": 0.00020212198539066366,
+    "toleranceDeg": 0.005,
+    "method": "Independent topocentric SPICE DE440s / MOON_ME / CN+S versus interpolated JPL Horizons DE441 airless observer tables. Both use the same LOLA observer elevation and mast. Terrain horizons and photometry are outside this comparison.",
+    "kernels": [
+      {
+        "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440s.bsp",
+        "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2"
+      },
+      {
+        "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de440_200625.bpc",
+        "sha256": "60cd55aa401ea2ea97360636f567554bfe4e37bb829f901b4460a455dfaf783f"
+      },
+      {
+        "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf",
+        "sha256": "a47c71e9c9f33796bdafb2c9d69a7ee447b6016ecad80f71cd6f3e479f9cf768"
+      },
+      {
+        "url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",
+        "sha256": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b"
+      }
+    ]
+  },
+  "horizonsInterpolation": {
+    "passed": true,
+    "directions": 824,
+    "maxErrorDeg": 0.000002021446601224462,
+    "independentProvider": false
+  },
+  "preparedTerrain": {
+    "passed": true,
+    "sites": 14,
+    "rays": 720,
+    "publishedHeightReferences": 3,
+    "independentSkylineValidation": false
+  },
+  "polarTerrain": {
+    "passed": true,
+    "sharedEdgeMaxErrorM": 0,
+    "poleLongitudeInvariant": true,
+    "quickAndFullProfileReconstruction": true
+  },
+  "eclipse": {
+    "passed": true,
+    "site": "apollo11",
+    "totalitySampleUtc": "2025-03-14T07:00:00.000Z",
+    "directPowerIndex": 0,
+    "preciseContactTimesValidated": false
+  },
+  "solarVectors": {
+    "passed": true,
+    "planets": 8,
+    "maxErrorKm": 0.07377,
+    "independentProvider": false
+  },
+  "terrainPerformance": {
+    "lat": 89.81321,
+    "lon": 41.23765,
+    "diskHitBefore": false,
+    "scope": "New coordinate/result cache with existing NASA raster caches retained; concurrent browser checks",
+    "statuses": [
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      202,
+      200
+    ],
+    "readyMs": 48437.7832,
+    "warmMs": 11.108200000002398,
+    "quality": "quick",
+    "rays": 180,
+    "elevationM": -568.896,
+    "calculationSeconds": 47.018,
+    "sources": [
+      {
+        "product": "ldem_80n_20m",
+        "url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_80n_20m.img",
+        "labelUrl": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_80n_20m.lbl",
+        "rows": 30400,
+        "cols": 30400,
+        "byteLength": 1848320000,
+        "scale": 0.5,
+        "mapScaleM": 20,
+        "httpEtag": "\"3f974e29f3d21:0\"",
+        "httpLastModified": "Wed, 31 Aug 2016 15:47:42 GMT",
+        "retrievedUtc": "2026-11-14",
+        "integrity": "Offsets, lengths and dataset ETag checked; SHA256 is the previously verified whole-product reference",
+        "access": "NASA HTTP byte ranges with bounded local block cache"
+      }
+    ]
+  },
+  "nextWindow": {
+    "testedUtc": "2026-11-15T00:21:22.856Z",
+    "realApi": true,
+    "rockyRenderingExcluded": true,
+    "emptyRange": {
+      "start": 1742403600000,
+      "end": 1743008400000
+    },
+    "continuedFrom": 1743012000000,
+    "nextWindow": {
+      "start": 1743660000000,
+      "end": 1744750800000,
+      "first": {
+        "time": 1743660000000,
+        "sunlitPct": 83.33333333333333,
+        "earthDtePct": 100,
+        "longestDarkH": 12
+      },
+      "best": {
+        "time": 1743703200000,
+        "sunlitPct": 100,
+        "earthDtePct": 100,
+        "longestDarkH": 0
+      },
+      "count": 304
+    },
+    "saved": {
+      "id": "A",
+      "siteId": "apollo11",
+      "epoch": "2025-04-03T06:00:00.000Z",
+      "durationDays": 3,
+      "arrayMode": "horizontal",
+      "arrayAzimuth": 0,
+      "profile": {
+        "minSunlitPct": 80,
+        "maxDarknessHours": 12,
+        "minEarthDtePct": 60
+      },
+      "flightProfile": "im-1"
+    },
+    "mobile": true,
+    "errors": []
+  },
+  "coreWorkflow": {
+    "testedUtc": "2026-11-15T00:43:13.914Z",
+    "realApi": true,
+    "rockyRenderingExcluded": true,
+    "twoSiteComparison": "Plan A gives 10 min more sunlight than plan B. The plans offer about the same Earth visibility.",
+    "exportScientificAssertions": true,
+    "clockChangePreservesPinnedMission": true,
+    "mobileDocumentOverflow": false,
+    "errors": []
+  },
+  "legacyEclipseBrowser": {
+    "passed": false,
+    "incomplete": true,
+    "reason": "Screenshot exceeded 30-second timeout; later obsolete date-label selector also identified. Export science subsequently asserted by targeted workflow."
+  },
+  "assistant": {
+    "help": {
+      "status": 200,
+      "elapsedMs": 1689.3705,
+      "speech": "Rocky explains: open the comparison panel, pick two sites, then run the comparison. The app shows sunlight hours and Earth-visibility hours for your chosen stay, plus which site wins on each.",
+      "details": "Open the comparison panel using the comparison button. Select two sites from the site list. Choose your surface stay length. Run the comparison to see sunlight hours, Earth-visibility hours, and the trade-off between them.",
+      "evidenceIds": [],
+      "actions": [],
+      "evidence": [],
+      "model": "Nemotron · OpenRouter"
+    },
+    "calculatedComparison": {
+      "question": "Compare Apollo 12 and IM-1 for a one-day surface stay starting 2026-11-20T00:00:00Z. Use calculated values, and do not change app settings.",
+      "status": 502,
+      "elapsedMs": 2729.6077999999998,
+      "error": "Rocky could not produce an evidence-backed answer. Please retry."
+    }
+  },
+  "limitations": [
+    "Workflow tests exclude Rocky GLB rendering.",
+    "No physical-phone, screen-reader, deployed-load or comprehensive visual regression audit.",
+    "SPICE verifies directions, not terrain skylines or photometry.",
+    "New-coordinate benchmark retains NASA raster caches and ran alongside browser checks.",
+    "Power index is not watts or energy; direct contact is not a link budget."
+  ],
+  "findingSummary": [
+    "New-coordinate preview took 48.44 seconds; warm response 11.11 ms.",
+    "Live scientific assistant comparison returned HTTP 502.",
+    "Independent polar skyline comparison remains outstanding.",
+    "Legacy browser harness requires maintenance.",
+    "JSON export application name is stale."
+  ]
+}

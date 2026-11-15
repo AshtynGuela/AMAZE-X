@@ -1,0 +1,22 @@
+{
+  "testedUtc": "2026-11-15T01:26:57.277Z",
+  "scope": "UI fixture response; Rocky mesh excluded; local dev server with real map data",
+  "header": {
+    "desktop": 56,
+    "mobile": 56
+  },
+  "panelEnterAndExit": true,
+  "oneSpeechBlock": true,
+  "replyMarker": true,
+  "reducedMotion": {
+    "duration": "0.08s",
+    "name": "ui-feedback-in"
+  },
+  "mobile": {
+    "width": 390,
+    "scrollWidth": 390,
+    "headerHeight": 56
+  },
+  "contextMenu": true,
+  "errors": []
+}

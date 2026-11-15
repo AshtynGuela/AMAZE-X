@@ -66,6 +66,8 @@ import { APP_NAME } from "../engine/app-actions.mjs";
 import Welcome from "./Welcome";
 import { SiteAsset, SiteBackdrop, SiteWordmark } from "./SiteChrome";
 import "./site-ui.css";
+import "./motion.css";
+import Presence from "./Presence";
 import { FEATURE_EVENT, type ActionResult } from "./app-actions";
 import { encodeSession, decodeSession } from "./share.mjs";
 import type { NearbyMission, NearbyPoint, RankedSite } from "./NearbySites";
@@ -740,8 +742,8 @@ export default function App() {
           <span className="phone-only">Sources</span>
         </IconButton>
       </nav>
-      {state.rail && (
-        <section className="flyout" data-tool={state.rail} aria-label={state.rail + " controls"}>
+      <Presence show={!!state.rail}>{state.rail && (
+        <section key={state.rail} className="flyout" data-tool={state.rail} aria-label={state.rail + " controls"}>
           <header>
             <h2>
               {
@@ -1063,6 +1065,7 @@ export default function App() {
           </>}
         </section>
       )}
+      </Presence>
       <div className="phone-only phone-map-controls" aria-label="Phone map controls">
         <label>View<select aria-label="Map view" value={state.view} onChange={event=>{state.set({view:event.target.value as typeof state.view,rail:null});setPhoneDetails(false);}}>
           <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option><option value="globe">Moon</option>
@@ -1444,7 +1447,7 @@ export default function App() {
           </div>
         </aside>
       )}
-      {state.timeline && !state.compare && !solar && (
+      <Presence show={state.timeline && !state.compare && !solar}>{state.timeline && !state.compare && !solar && (
         <section className="timeline-drawer">
           <header>
             <h2>{site?.name} · next 24 hours</h2>
@@ -1462,7 +1465,8 @@ export default function App() {
           </p>
         </section>
       )}
-      {state.compare && state.scenarios.length > 0 && !solar && (
+      </Presence>
+      <Presence show={state.compare && state.scenarios.length > 0 && !solar}>{state.compare && state.scenarios.length > 0 && !solar && (
         <section className="compare-tray">
           <header>
             <h2>
@@ -1500,6 +1504,7 @@ export default function App() {
           )}
         </section>
       )}
+      </Presence>
       <div className="clockbar">
         {<button className="site-view-360" aria-label="Show whole Moon" title="Show whole Moon" onClick={() => state.set({ view: "globe", cameraCommand: { mode: "whole_moon", version: (state.cameraCommand?.version ?? 0) + 1 } })}><SiteAsset name="view-360" /></button>}
         <div className="transport">

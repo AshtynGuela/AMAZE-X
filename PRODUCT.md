@@ -20,3 +20,6 @@ Original technical specification, agreed PROJECT_BRIEF.md, parent Rocky and Sola
 The map is the product. Compare dates and sites. Deterministic numbers, conversational explanations. Show provenance and assumptions. Do not hide missing data behind polished visuals.
 ## Accessibility & Inclusion
 Keyboard alternatives to context menus; visible focus; labelled controls; patterns and words in addition to status colours; reduced-motion support; readable Rocky responses.
+
+## Current workspace refinement — 15 November 2026
+The workspace header is 56 px on desktop and phones (plus the phone safe-area inset). Short edge-based transitions connect tools, comparison and timeline panels; routine interaction never waits for an animation. Rocky shows one spoken answer, with no secondary exposition, ending in Question, Statement or a related speech marker. Detailed numerical evidence remains available in the expandable evidence table. Larger performance, independent terrain-validation and assistant reliability work is prioritized in TODO.md.

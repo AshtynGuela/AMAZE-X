@@ -58,7 +58,7 @@ export function createAnalysisReport({
   ];
   return {
     schemaVersion: 2,
-    application: "Very Best Lunar Site Scouter",
+    application: "AMAZE-X",
     engineVersion: ENGINE_VERSION,
     exportedUtc,
     challenge:
