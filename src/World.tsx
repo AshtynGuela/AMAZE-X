@@ -15,6 +15,10 @@ import { EarthGlobe, useEarthOrientation } from "./EarthGlobe";
 import { surfaceDetail, surfaceDetailCredit } from "./surfaceDetails";
 import type { RankedSite } from "./NearbySites";
 import "./lunar-map.css";
+import CelestialOrbits from "./CelestialOrbits";
+import SceneLabel from "./SceneLabel";
+import { SiteCoordinatesEmpty } from "./SiteChrome";
+import { useCelestialContext, type CelestialContext } from "./celestial-context";
 const LunarGlobe = lazy(() => import("./LunarGlobe"));
 export const lunarPoint = (lat: number, lon: number, r = 3.5) =>
   new THREE.Vector3(
@@ -546,6 +550,7 @@ function Scene({
   onNearbyPin,
   targetBearing,
   closeUp = false,
+  celestial,
 }: {
   onContext: (p: any) => void;
   onSnapshot: (fn: () => string) => void;
@@ -557,6 +562,7 @@ function Scene({
   onNearbyPin: (site: RankedSite) => void;
   targetBearing: { az: number; el: number } | null;
   closeUp?: boolean;
+  celestial?: CelestialContext;
 }) {
   const state = useScout(),
     { camera, gl, size, invalidate } = useThree(),
@@ -636,11 +642,14 @@ function Scene({
   useEffect(() => {
     const c = camera as THREE.PerspectiveCamera;
     c.near = 0.001;
-    c.far = 500;
+    c.far = 100000;
     c.fov = 40;
     c.updateProjectionMatrix();
     invalidate();
   }, []);
+  useEffect(() => {
+    if (['earth_moon_orbit','solar_orbit','earth','sun'].includes(state.cameraCommand?.mode ?? '')) move.current = null;
+  }, [state.cameraCommand]);
   useEffect(() => {
     if (!targetBearing) return;
     look.current = {
@@ -989,14 +998,8 @@ function Scene({
               </Suspense>
             )}
           {!polar && (
-            <Html position={[0, radius + 1, 0]} center>
-              <button
-                className="body-label moon-body-label"
-                onClick={() => state.set({ view: "globe" })}
-              >
-                MOON <span>Explore landing sites</span>
-              </button>
-            </Html>
+            <SceneLabel text="MOON" detail="Explore landing sites" position={[0, radius + 1, 0]}
+              onClick={() => state.set({ view: "globe" })} />
           )}
           {state.markers &&
             !state.pickingSite &&
@@ -1060,11 +1063,12 @@ function Scene({
               />
             </mesh>
           )}
-          {earth && !polar && (
+          {earth && !celestial && !polar && (
             <Suspense fallback={null}>
               <Earth position={earth} time={state.time} radius={state.trueScale ? 0.6378 : 4.6} />
             </Suspense>
           )}
+          {celestial && !local && !polar && <Suspense fallback={null}><CelestialOrbits data={celestial} time={state.time} physical={state.trueScale} command={state.cameraCommand} /></Suspense>}
           {state.travel && <Shuttle groupRef={ship} scale={radius * 0.07} />}
         </>
       )}
@@ -1080,7 +1084,7 @@ function Scene({
         minDistance={
           state.travel ? radius * 0.02 : local ? 0.001 : radius * 1.04
         }
-        maxDistance={400}
+        maxDistance={state.trueScale ? 100000 : 1600}
         enablePan={state.view !== "horizon"}
         mouseButtons={{
           LEFT: THREE.MOUSE.ROTATE,
@@ -1114,6 +1118,8 @@ export default function World(props: {
       (s) => s.id === state.selected,
     );
   const solar = state.view === "solar_system";
+  const celestial = useCelestialContext(state.time, !solar && !state.welcome);
+  const orbitCamera = (mode: string) => state.set({ view: state.view === "overview" ? "overview" : "globe", cameraCommand: { mode, version: (state.cameraCommand?.version ?? 0) + 1 } });
   const polarGround = !!selected && Math.abs(selected.lat) >= 80 && ["surface", "horizon"].includes(state.view);
   const lunar = !solar && !polarGround && state.view !== "overview" && !state.travel && !(state.view === "polar_south" && state.statLayer);
   const closeUp = selected && surfaceDetail(selected);
@@ -1124,12 +1130,12 @@ export default function World(props: {
         aria-label={polarGround ? "Local lunar terrain at the selected coordinates. Drag to orbit and wheel to zoom." : lunar ? "Interactive lunar terrain. Drag to pan, middle-drag to tilt, wheel to zoom." : "Interactive Earth–Moon map. Drag to orbit, wheel to zoom, W A S D to fly, Q and E to move vertically."}
       >
         {lunar ? <Suspense fallback={<div className="scene-loading">Loading lunar navigation…</div>}>
-          <LunarGlobe {...props} onBearing={setBearing} targetBearing={targetBearing} terrainLighting={terrainLighting} onToggleLighting={toggleTerrainLighting} />
+          <LunarGlobe {...props} celestial={celestial.data} onBearing={setBearing} targetBearing={targetBearing} terrainLighting={terrainLighting} onToggleLighting={toggleTerrainLighting} />
         </Suspense> : (
         <Canvas
           frameloop="demand"
           shadows={state.view === "horizon" || state.view === "surface"}
-          camera={{ position: [15, 16, 60], near: 0.001, far: 500, fov: 40 }}
+          camera={{ position: [15, 16, 60], near: 0.001, far: 100000, fov: 40 }}
           dpr={[1, 1.5]}
           gl={{
             antialias: true,
@@ -1142,10 +1148,19 @@ export default function World(props: {
         >
           <SpaceBackdrop onReady={solar ? props.onReady : undefined} />
           <Suspense fallback={null}>
-            {solar ? <SolarCanvasScene /> : <Scene {...props} onBearing={setBearing} onImageState={setSurfaceImage} terrainLighting={terrainLighting} targetBearing={targetBearing} closeUp={polarCloseUp} />}
+            {solar ? <SolarCanvasScene /> : <Scene {...props} onBearing={setBearing} onImageState={setSurfaceImage} terrainLighting={terrainLighting} targetBearing={targetBearing} closeUp={polarCloseUp} celestial={celestial.data} />}
           </Suspense>
         </Canvas>
         )}
+      {(solar || state.view === 'overview') && <SiteCoordinatesEmpty />}
+      {!solar && <nav className="lunar-orbit-nav" aria-label="Earth and Sun orbit navigation">
+        <button onClick={() => orbitCamera("earth_moon_orbit")} disabled={!celestial.data}>Earth–Moon orbit</button>
+        <button onClick={() => orbitCamera("solar_orbit")} disabled={!celestial.data}>Sun–Earth orbit</button>
+        <button onClick={() => orbitCamera("earth")} disabled={!celestial.data}>Earth</button>
+        <button onClick={() => orbitCamera("sun")} disabled={!celestial.data}>Sun</button>
+        {celestial.data ? <span>Earth {Math.round(Math.hypot(...celestial.data.earthM)/1000).toLocaleString()} km · Sun {(Math.hypot(...celestial.data.sunM)/1e9).toFixed(2)} million km</span>
+          : <span role="status">{celestial.error ? "Orbit positions unavailable" : "Loading JPL orbit positions…"}</span>}
+      </nav>}
         {!solar && !lunar &&
           !state.pickingSite &&
           selected &&
@@ -1178,6 +1193,7 @@ export default function World(props: {
           : surfaceImage === "ready" ? "NASA Moon Trek · LOLA terrain" : surfaceImage === "loading" ? "Loading Moon Trek imagery…" : "LOLA terrain"}</span>
         {!polarGround && <button type="button" aria-pressed={!terrainLighting} onClick={toggleTerrainLighting}>Use mission lighting</button>}
       </div>}
+
     </SolarSystem>
   );
 }

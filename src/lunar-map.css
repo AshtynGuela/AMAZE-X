@@ -76,3 +76,6 @@
  .lunar-measurement-help { position: absolute; right: 12px; bottom: 10px; }
  .lunar-stream-state { top: 173px; }
 }
+.lunar-body-label { position: absolute; z-index: 9; transform: translate(-50%,calc(-100% - 8px)); padding: 3px 6px; border: 0; border-radius: 4px; color: #b7d5e9; background: #0d151cdb; font: 12px D-DIN,sans-serif; }
+.lunar-body-label.sun { color: #ffdc8b; }
+.lunar-body-label::after { content: ''; position: absolute; left: calc(50% - 2px); bottom: -10px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }

@@ -86,7 +86,11 @@
 .app.lunar-ui .flyout h3 { font-size: 13px; margin-top: 20px; }
 .app.lunar-ui .flyout select, .app.lunar-ui .flyout input { color: #eee; background-color: #181818; }
 
-.app.lunar-ui .view-toolbar { display: none; }
+.app.lunar-ui .view-toolbar {
+  display: flex; top: 94px; max-width: calc(100vw - 640px);
+  background: #171717db; border-color: #ffffff24; border-radius: 24px;
+  overflow-x: auto; scrollbar-width: none;
+}
 .app.lunar-ui .inspector {
   top: 81px; bottom: 0; right: 0; width: var(--site-inspector); max-height: none;
   padding: 10px 10px 24px 20px; color: #fff; border: 1px solid #3f3f3f4d; border-radius: 8px 0 0 0;
@@ -164,13 +168,23 @@
 .app.lunar-ui .lunar-cursor dd { min-width: 0; min-height: 18px; font-size: 10px; line-height: 1.5; letter-spacing: 1.5px; color: #fff; white-space: nowrap; }
 .app.lunar-ui .lunar-cursor > a { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); margin: 0; font-size: 7px; letter-spacing: 1.6px; color: #ddd; }
 .app.lunar-ui .lunar-measurement-help { display: none; }
-.app.lunar-ui .lunar-camera { display: none; right: calc(var(--site-inspector) + 14px); top: 94px; }
+.app.lunar-ui .lunar-camera { display: flex; right: 14px; top: 150px; }
+.app.lunar-ui.has-inspector .lunar-camera { right: calc(var(--site-inspector) + 14px); }
 .app.lunar-ui:has(.flyout[aria-label="settings controls"]) .lunar-camera { display: flex; }
-.app.lunar-ui .lunar-settings { right: calc(var(--site-inspector) + 58px); top: 94px; }
+.app.lunar-ui .lunar-settings { right: calc(var(--site-inspector) + 58px); top: 220px; }
 .app.lunar-ui .lunar-stream-state { left: 330px; top: 94px; padding: 5px 9px; font-size: 10px; background: #1119; color: #ccc; }
 .app.lunar-ui .lunar-canvas .cesium-viewer-bottom { left: 330px; bottom: 94px; max-width: calc(100% - 650px); }
 .app.lunar-ui .lunar-view-mode { left: 330px; top: 94px; background: #151515c0; font-size: 11px; }
 .app.lunar-ui .horizon-readout { left: 330px; bottom: 105px; background: #151515dc; border-color: #ffffff20; }
+.lunar-orbit-nav {
+  position: absolute; z-index: 14; top: 142px; left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: calc(100vw - 650px); display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 3px; padding: 5px 8px; color: #ddd; background: #171717d9;
+  border: 1px solid #ffffff20; border-radius: 18px;
+}
+.lunar-orbit-nav button { min-height: 30px; padding: 5px 8px; color: #ddd; background: transparent; border: 0; font-size: 10px; }
+.lunar-orbit-nav button:hover { background: #ffffff14; }
+.lunar-orbit-nav > span { flex-basis: 100%; text-align: center; font-size: 9px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 
 /* Source-frame icon centres, including the differing icon optical offsets. */
 @media (min-width: 761px) and (min-height: 774px) {
@@ -202,6 +216,11 @@
   .app.lunar-ui .mode-toggle { min-height: 40px; font-size: 12px; padding: 8px 12px; }
   .app.lunar-ui .brand .site-wordmark { font-size: 27px; height: 60px; line-height: 60px; gap: 7px; }
   .app.lunar-ui .phone-map-controls { display: none; }
+  .app.lunar-ui .view-toolbar { display: flex; top: calc(var(--site-header) + 12px); left: 66px; right: 8px; max-width: none; transform: none; width: auto; z-index: 36; }
+  .app.lunar-ui .view-toolbar > button { min-height: 40px; padding: 6px 10px; flex-shrink: 0; }
+  .lunar-orbit-nav { top: calc(var(--site-header) + 64px); left: 66px; right: 8px; transform: none; max-width: none; width: auto; }
+  .lunar-orbit-nav button { min-height: 36px; font-size: 10px; padding: 5px; }
+  .lunar-orbit-nav > span { font-size: 9px; }
   .app.lunar-ui .instrument-rail { top: calc(var(--site-header) + 12px); bottom: auto; right: auto; width: 56px; height: min(430px,100dvh - 235px); padding: 8px 0; border-right: 1px solid #ffffff20; border-top: 0; z-index: 38; }
   .app.lunar-ui .instrument-rail > button { width: 56px; height: 52px; flex: none; padding: 0; }
   .app.lunar-ui .site-rail-icon { transform: scale(.7); }
@@ -237,7 +256,7 @@
   .app.lunar-ui .lunar-cursor dt { font-size: 10px; }
   .app.lunar-ui .lunar-cursor dd { font-size: 12px; letter-spacing: 0; }
   .app.lunar-ui .lunar-cursor dl > div:nth-child(n+4) { display: flex; }
-  .app.lunar-ui .lunar-camera { right: 10px; top: calc(var(--site-header) + 14px); }
+  .app.lunar-ui .lunar-camera, .app.lunar-ui.has-inspector .lunar-camera { right: 10px; top: calc(var(--site-header) + 150px); display: grid; grid-template-columns: repeat(2,36px); }
   .app.lunar-ui .lunar-settings { top: calc(var(--site-header) + 75px); left: 66px; right: 8px; bottom: 165px; width: auto; z-index: 43; }
   .app.lunar-ui .lunar-stream-state { top: calc(var(--site-header) + 14px); left: 66px; max-width: calc(100vw - 76px); }
   .app.lunar-ui .lunar-view-mode { left: 66px; top: calc(var(--site-header) + 44px); max-width: calc(100vw - 80px); }
@@ -247,3 +266,160 @@
 
 .app.lunar-ui[data-mode="plain"] .inspector-section.site-source,
 .app.lunar-ui[data-mode="plain"] .inspector-section:has(> .sky-link:only-child) { display: none; }
+/* Six Figma instrument panels: 1:3, 25:90, 39:1043, 25:354, 44:1494, 44:1670. */
+.site-view-icon { display: inline-grid; position: relative; place-items: center; width: 24px; height: 28px; flex: 0 0 24px; }
+.site-view-overview { width: 36px; flex-basis: 36px; }
+.site-view-overview > img:first-child { position: absolute; left: 0; bottom: 2px; }
+.site-view-overview > img:last-child { position: absolute; right: 0; top: -4px; }
+.app.lunar-ui .view-toolbar { top: 90px; min-height: 45px; padding: 4px 10px; gap: 3px; }
+.app.lunar-ui .view-toolbar > button { gap: 2px; font-size: 13px; font-weight: 400; padding: 4px 5px; }
+.app.lunar-ui .view-toolbar > button:not(.icon-button) { background: transparent; }
+.app.lunar-ui .view-toolbar > button.active { background: #ffffff09; border-radius: 24px; }
+.app.lunar-ui .flyout .site-extra-controls { margin-top: 22px; font-size: 10px; color: #bcbcbc; }
+.app.lunar-ui .site-extra-controls > summary { cursor: pointer; padding: 7px 0; }
+.app.lunar-ui .site-extra-controls[open] { color: #eee; }
+.app.lunar-ui .site-extra-controls > .event-list { margin: 10px 0; gap: 8px; }
+.app.lunar-ui .flyout :is(.site-clock-fields,.site-layer-fields,.site-settings-fields) { width: 181px; max-width: 100%; }
+.app.lunar-ui .flyout :is(label,h3) { font-size: 10px; font-weight: 400; line-height: 1.35; }
+.app.lunar-ui .flyout label { margin-bottom: 17px; }
+.app.lunar-ui .flyout .data-note { font-size: 8px; line-height: 1.25; margin: 16px 0; color: #ddd; }
+.app.lunar-ui .flyout :is(select,input[type=number]) { min-height: 28px; padding: 6px 14px; font-size: 10px; border: 0; border-radius: 24px; background: #35353552; box-shadow: inset 0 5px 2.5px #0008; }
+.app.lunar-ui .site-sidebar-rule { border: 0; }
+.app.lunar-ui .flyout .button-row > button { flex: 1; min-height: 28px; border: 0; border-radius: 24px; font-size: 10px; font-weight: 400; color: white; background: #35353552; box-shadow: inset 0 5px 2.5px #0008; }
+.app.lunar-ui .flyout[data-tool=clock] .site-clock-fields { margin-top: 26px; }
+.app.lunar-ui .flyout[data-tool=clock] label { margin: 0 0 7px; }
+.site-date-field { position: relative; display: block; margin-top: 5px; }
+.app.lunar-ui .flyout .site-date-field > input { width: 100%; min-height: 28px; height: 28px; border: 0; border-radius: 24px; background: #f0f0f0ad; color: #111; padding: 4px 28px 4px 8px; font-size: 9px; }
+.site-date-field input::-webkit-calendar-picker-indicator { position: absolute; right: 3px; width: 24px; height: 24px; opacity: 0; cursor: pointer; }
+.site-calendar-icon { position: absolute; right: 4px; top: 2px; pointer-events: none; }
+.app.lunar-ui .flyout[data-tool=clock] .button-row { padding: 0 7px; gap: 15px; }
+.app.lunar-ui .flyout[data-tool=clock] .button-row > button { min-height: 23px; padding: 4px 5px; }
+.app.lunar-ui .flyout[data-tool=clock] h3 { margin: 32px 0 6px; }
+.app.lunar-ui .speed-buttons { display: grid; grid-template-columns: repeat(2,1fr); gap: 4px 7px; padding: 0 2px; }
+.app.lunar-ui .speed-buttons > button { min-height: 28px; padding: 5px; border: 0; border-radius: 24px; background: #f0f0f0a6; color: #111; font-size: 10px; }
+.app.lunar-ui .speed-buttons > button.active { color: #000; outline: 1px solid #fff; background: #f0f0f0cd; }
+.app.lunar-ui .flyout[data-tool=layers] { padding-top: 45px; }
+.app.lunar-ui .site-layer-fields { margin-top: 20px; }
+.app.lunar-ui .site-layer-fields .switch-row { margin: 0 0 9px; min-height: 14px; }
+.app.lunar-ui .site-layer-fields .switch-row input { appearance: none; width: 16px; height: 16px; min-height: 0; padding: 0; border-radius: 1px; border: 1px solid #aaa; background: transparent; cursor: pointer; }
+.app.lunar-ui .site-layer-fields .switch-row input:checked { background: url('/assets/site-ui/current/check.svg') center no-repeat; border-color: transparent; }
+.app.lunar-ui .site-layer-fields h3 { margin: 22px 0 9px; }
+.app.lunar-ui .site-layer-fields > select { width: 169px; margin-left: 5px; appearance: none; background: url('/assets/site-ui/current/select-arrow.svg') right 10px center / 16px 16px no-repeat,#35353552; padding-right: 30px; }
+.app.lunar-ui .flyout[data-tool=settings] { padding-top: 68px; }
+.app.lunar-ui .site-settings-fields { margin-top: 28px; }
+.site-select-field,.site-number-field { display: block; position: relative; margin-top: 8px; }
+.site-select-field select { appearance: none; }
+.site-select-field > select,.site-number-field > input { width: 100%; }
+.site-field-arrow,.site-field-spinner { position: absolute; right: 8px; top: 2px; pointer-events: none; }
+.site-field-arrow { transform: rotate(90deg); }
+.site-field-spinner { transform: rotate(-89.87deg); top: 3px; }
+.site-number-field input::-webkit-inner-spin-button { opacity: 0; width: 20px; }
+.app.lunar-ui .site-settings-fields > .data-note { margin-top: 18px; }
+.app.lunar-ui .site-settings-fields > h3 { font-size: 12px; margin: 28px 0 3px; }
+.app.lunar-ui .site-settings-fields .connection { font-size: 8px; margin: 0 0 10px; }
+.app.lunar-ui .site-settings-fields > .full-width { font-size: 10px; min-height: 28px; border: 0; border-radius: 24px; background: #35353552; box-shadow: inset 0 5px 2.5px #0008; color: #fff; }
+.app.lunar-ui .flyout[data-tool=compare] { padding-top: 44px; }
+.app.lunar-ui .flyout[data-tool=compare] h2 { max-width: 192px; }
+.site-scenario-count { position: absolute; left: 83px; top: 83px; font-size: 8px; }
+.site-compare-empty { margin-top: 120px; text-align: center; font-size: 8px; }
+.site-compare-empty > img { margin: 0 auto 20px; }
+.site-compare-empty p { margin: 0 -2px 16px; white-space: nowrap; font-size: 8px; }
+.site-compare-empty button { width: 169px; min-height: 28px; padding: 6px; border: 0; border-radius: 24px; background: #35353552; color: #fff; box-shadow: inset 0 5px 2.5px #0008; font-size: 10px; }
+.site-scenario-list { margin-top: 28px; display: grid; gap: 9px; }
+.site-scenario-list > button { display: grid; gap: 5px; text-align: left; padding: 10px; font-size: 11px; }
+.site-scenario-list small { color: #bbb; font-size: 9px; }
+.app.lunar-ui .inspector-section,.app.lunar-ui .condition-reading,.app.lunar-ui .site-crossing-title { border-image-source: url('/assets/site-ui/current/inspector-rule.svg'); }
+.app.lunar-ui .inspector-section:has(.primary) { border-image-source: url('/assets/site-ui/current/planning-rule.svg'); }
+.app.lunar-ui.solar-mode .solar-catalog { left: 103px; top: 110px; width: 210px; max-height: calc(100dvh - 250px); padding: 10px; color: #fff; border: 1px solid #ffffff20; border-radius: 8px; background: linear-gradient(#191919b0,#000d); font-family: 'D-DIN Expanded',sans-serif; }
+.app.lunar-ui .solar-catalog h2 { font-size: 23px; font-weight: 400; line-height: 1.2; margin: 0 0 2px; }
+.app.lunar-ui .solar-catalog p { font-size: 10px; line-height: 1.3; margin: 0 0 12px; color: #fff; }
+.app.lunar-ui .solar-catalog > button { position: relative; width: 100%; height: 31px; min-height: 31px; font-size: 10px; padding: 0 8px 0 42px; border: 0; border-radius: 24px; color: #fff; gap: 0; }
+.app.lunar-ui .solar-catalog > button.selected { background: #35353552; box-shadow: inset 0 5px 2.5px #0008; }
+.app.lunar-ui .planet-thumbnail { position: absolute; left: 0; width: 30px; height: 28px; object-fit: cover; }
+.app.lunar-ui .planet-thumbnail-saturn { width: 41.333px; left: -5.667px; }
+.app.lunar-ui .planet-thumbnail-uranus { width: 28px; left: 1px; }
+.app.lunar-ui.solar-mode .solar-info { left: 103px; right: auto; top: 500px; width: 210px; padding: 6px 10px; max-height: calc(100dvh - 590px); background: #151515e8; border-color: #ffffff20; border-radius: 8px; color: #fff; }
+.solar-info-content[hidden] { display: none; }
+.app.lunar-ui .solar-details-toggle { width: 100%; padding: 6px 0; background: transparent; border: 0; font-size: 10px; text-align: left; }
+.app.lunar-ui .solar-info h1 { font-size: 18px; margin-top: 12px; }
+.app.lunar-ui .solar-info :is(p,.data-note) { font-size: 10px; line-height: 1.5; }
+.app.lunar-ui:has(.flyout) :is(.solar-catalog,.solar-info) { display: none; }
+.app.lunar-ui .solar-controls { top: auto; bottom: 100px; border-radius: 24px; border-color: #ffffff20; background: #171717d9; }
+.app.lunar-ui .solar-controls :is(button,label) { font-size: 10px; }
+@media (max-width:760px), (max-width:960px) and (max-height:500px) {
+ .app.lunar-ui .flyout[data-tool=clock],.app.lunar-ui .flyout[data-tool=layers],.app.lunar-ui .flyout[data-tool=settings],.app.lunar-ui .flyout[data-tool=compare] { padding-top: 12px; }
+ .app.lunar-ui .flyout :is(.site-clock-fields,.site-layer-fields,.site-settings-fields) { width: 100%; }
+ .app.lunar-ui .flyout :is(label,h3) { font-size: 13px; }
+ .app.lunar-ui .flyout .data-note { font-size: 11px; line-height: 1.45; }
+ .app.lunar-ui .flyout :is(select,input[type=number],.site-date-field > input) { font-size: 14px; min-height: 40px; height: auto; }
+ .app.lunar-ui .flyout[data-tool=clock] .button-row > button,.app.lunar-ui .speed-buttons > button { min-height: 40px; font-size: 12px; }
+ .site-date-field .site-calendar-icon { top: 8px; }
+ .app.lunar-ui .site-layer-fields .switch-row { min-height: 32px; }
+ .app.lunar-ui .site-settings-fields > h3 { font-size: 15px; }
+ .app.lunar-ui .site-settings-fields .connection { font-size: 12px; }
+ .site-scenario-count { top: 50px; left: 88px; }
+ .site-compare-empty { margin-top: 80px; }
+ .site-compare-empty p { white-space: normal; font-size: 12px; }
+ .site-compare-empty button { min-height: 44px; font-size: 12px; }
+ .app.lunar-ui .view-toolbar { top: calc(var(--site-header) + 12px); padding: 4px; }
+ .app.lunar-ui .view-toolbar > button { min-height: 40px; font-size: 12px; }
+ .app.lunar-ui.solar-mode .solar-catalog { left: 66px; right: 8px; top: calc(var(--site-header) + 66px); width: auto; max-height: 46dvh; padding: 10px; }
+ .app.lunar-ui .solar-catalog .phone-destination { display: none; }
+ .app.lunar-ui .solar-catalog > button { display: flex; height: 35px; min-height: 35px; font-size: 12px; }
+ .app.lunar-ui .solar-catalog p { font-size: 12px; }
+ .app.lunar-ui.solar-mode .solar-info { left: 66px; right: 8px; top: auto; bottom: 90px; width: auto; max-height: 36dvh; }
+ .app.lunar-ui .solar-details-toggle { min-height: 36px; font-size: 12px; }
+ .app.lunar-ui .solar-controls { left: 66px; right: 8px; top: auto; bottom: 150px; width: auto; transform: none; overflow: auto; padding: 6px; }
+ .app.lunar-ui .solar-controls :is(button,label) { min-height: 36px; font-size: 11px; }
+}
+.site-map-select { display: block; width: 169px; margin-left: 5px; position: relative; }
+.app.lunar-ui .site-map-select > select { width: 100%; appearance: none; background: #35353552; padding-right: 30px; }
+.site-map-select-arrow { position: absolute; top: 5px; right: 8px; transform: rotate(89.72deg); pointer-events: none; }
+.app.lunar-ui .flyout:is([data-tool=settings],[data-tool=layers],[data-tool=compare]) > header h2 { margin-left: 6px; }
+.app.lunar-ui .site-layer-fields { margin-left: 6px; }
+@media (max-width:760px), (max-width:960px) and (max-height:500px) {
+ .app.lunar-ui .site-settings-fields > .full-width { min-height: 44px; font-size: 13px; }
+ .site-field-arrow { top: 8px; }
+ .site-field-spinner { top: 9px; }
+ .site-map-select-arrow { top: 11px; }
+ .app.lunar-ui .site-layer-fields .switch-row input { width: 20px; height: 20px; }
+}
+/* Resolve inherited form and phone styles without changing control behaviour. */
+.app.lunar-ui .site-layer-fields .switch-row { padding: 0; border: 0; }
+.app.lunar-ui .site-layer-fields .switch-row > span { font-size: 10px; font-weight: 400; }
+.app.lunar-ui .flyout[data-tool=layers] > .muted { max-width: 181px; }
+.app.lunar-ui .flyout[data-tool=clock] .site-clock-fields { margin-top: 22px; }
+.app.lunar-ui .flyout[data-tool=clock] label { gap: 0; }
+.app.lunar-ui .flyout[data-tool=clock] .site-date-field { margin-top: 0; }
+.app.lunar-ui .flyout[data-tool=clock] h3 { margin-top: 28px; }
+.app.lunar-ui .site-settings-fields { margin-top: 18px; }
+.app.lunar-ui .site-settings-fields label { gap: 0; }
+.app.lunar-ui .site-settings-fields :is(.site-select-field,.site-number-field) { margin-top: 6px; }
+.site-compare-heading { white-space: nowrap; }
+.app.lunar-ui .flyout[data-tool=compare] h2 { text-wrap: wrap; }
+.app.lunar-ui .planet-thumbnail:is(.planet-thumbnail-moon,.planet-thumbnail-earth,.planet-thumbnail-jupiter) { height: 26px; }
+.app.lunar-ui .planet-thumbnail-mars { height: 29.5px; }
+.app.lunar-ui .planet-thumbnail-neptune { width: 30.333px; }
+.app.lunar-ui .planet-thumbnail-saturn { left: 0; }
+.app.lunar-ui .solar-labels { inset: 0; }
+@media (max-width:760px), (max-width:960px) and (max-height:500px) {
+ .app.lunar-ui .world.solar-world { inset: 0 !important; }
+ .app.lunar-ui .view-toolbar { justify-content: flex-start; overflow-x: auto; }
+ .app.lunar-ui .view-toolbar > button { flex: 0 0 auto; }
+ .app.lunar-ui .view-toolbar > button > span { display: inline; }
+ .app.lunar-ui .view-toolbar .site-view-icon { display: inline-grid; }
+ .app.lunar-ui .solar-catalog :is(h2,p) { display: block; }
+ .app.lunar-ui.solar-mode .solar-catalog { max-height: 36dvh; }
+ .app.lunar-ui.solar-mode .solar-info { display: block; bottom: 346px; }
+ .app.lunar-ui:has(.flyout) .solar-info { display: none; }
+ .app.lunar-ui .solar-controls { bottom: 216px; }
+ .app.lunar-ui .site-layer-fields .switch-row > span { font-size: 13px; }
+ .app.lunar-ui .flyout[data-tool=compare] h2 { font-size: 21px; }
+ .app.lunar-ui .flyout[data-tool=clock] .site-clock-fields { margin-top: 22px; }
+}
+.app.lunar-ui .site-layer-fields .switch-row input { margin: 0; }
+.app.lunar-ui .site-layer-fields .switch-row { max-width: 164px; margin-bottom: 7px; }
+@media (max-width:760px), (max-width:960px) and (max-height:500px) {
+ .app.lunar-ui.solar-mode .solar-catalog { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+ .app.lunar-ui .site-layer-fields .switch-row { max-width: none; }
+}

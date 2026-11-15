@@ -56,13 +56,22 @@ export function polarMesh(patch, rectangle, ellipsoid, childTileMask = 15) {
   const bounds = BoundingSphere.fromPoints(positions);
   const occluder = new EllipsoidalOccluder(ellipsoid);
   const horizon = occluder.computeHorizonCullingPointPossiblyUnderEllipsoid(bounds.center, positions, min);
+  // A root hemisphere contains antipodal edges, so its bounding-sphere centre
+  // can be the lunar centre. That is not a valid horizon-culling point (it
+  // would hide the whole root tile). A distant outward point is conservative
+  // for this hemisphere and keeps the ancestor drawable as children refine.
+  const broadTileHorizon = ellipsoid.cartographicToCartesian(new Cartographic(
+    rectangle.west + rectangle.width / 2, rectangle.south + rectangle.height / 2, 0));
+  ellipsoid.transformPositionToScaledSpace(broadTileHorizon, broadTileHorizon);
+  Cartesian3.normalize(broadTileHorizon, broadTileHorizon);
+  Cartesian3.multiplyByScalar(broadTileHorizon, 1e12, broadTileHorizon);
   const edge = Array.from({length:size}, (_, i) => i);
   const skirt = Math.min(1000, rectangle.height * ellipsoid.maximumRadius / (size - 1) * 4);
   return new QuantizedMeshTerrainData({
     minimumHeight:min, maximumHeight:max, quantizedVertices:vertices,
     indices:new Uint16Array(indices), encodedNormals, boundingSphere:bounds,
     orientedBoundingBox:OrientedBoundingBox.fromRectangle(rectangle, min, max, ellipsoid),
-    horizonOcclusionPoint:horizon ?? ellipsoid.transformPositionToScaledSpace(bounds.center),
+    horizonOcclusionPoint:horizon ?? broadTileHorizon,
     westIndices:edge.map(i => i * size), eastIndices:edge.map(i => i * size + size - 1),
     northIndices:edge, southIndices:edge.map(i => (size - 1) * size + i),
     westSkirtHeight:skirt, eastSkirtHeight:skirt, northSkirtHeight:skirt, southSkirtHeight:skirt,

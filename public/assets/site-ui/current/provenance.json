@@ -1,0 +1,293 @@
+{
+  "fileKey": "us7HrDlifYdVAzJaQM4m3F",
+  "frames": [
+    "1:3",
+    "25:90",
+    "39:1043",
+    "25:354",
+    "44:1494",
+    "44:1670"
+  ],
+  "assets": [
+    {
+      "nodeId": "39:1043",
+      "variable": "imgNeptune1",
+      "name": "planet-neptune.png",
+      "url": "https://www.figma.com/api/mcp/asset/b0c033bf-3a33-4a71-ba82-4836b1293032.png",
+      "localFile": "planet-neptune.png",
+      "sha256": "54036a5b55134d8c6284232b1b1e0c9480eec697032a8d3f4db2415e91ce3551"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgMars1",
+      "name": "planet-mars.png",
+      "url": "https://www.figma.com/api/mcp/asset/8a913d06-ad11-4e4b-86f4-a9a2c1ac3ba7.png",
+      "localFile": "planet-mars.png",
+      "sha256": "295c37b62b4e763aa5e831393f7b5b767abc677f72f04ad444cea094fa68f8df"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgSaturn1",
+      "name": "planet-saturn.png",
+      "url": "https://www.figma.com/api/mcp/asset/33bcc2bd-1858-49dd-b1f9-ebd52d50077d.png",
+      "localFile": "planet-saturn.png",
+      "sha256": "8fc5775c22814f1fac03414a343e193a7702520622f52afddda3052e5e68684a"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgUranus1",
+      "name": "planet-uranus.png",
+      "url": "https://www.figma.com/api/mcp/asset/db473747-11a4-4296-aa18-aced4f422015.png",
+      "localFile": "planet-uranus.png",
+      "sha256": "56bddd64b196d27b6480d4abc683b4ca4a11c7bbd79109316cf846dba7855d5f"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgVenus1",
+      "name": "planet-venus.png",
+      "url": "https://www.figma.com/api/mcp/asset/d96fab3b-f5d8-422e-b053-d240a0ff181e.png",
+      "localFile": "planet-venus.png",
+      "sha256": "50bce92716c0991709ac5702f12ce524d79ded03b110b46e3085175d79418a59"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgMercury1",
+      "name": "planet-mercury.png",
+      "url": "https://www.figma.com/api/mcp/asset/b0f89568-f15f-42fa-8606-d52c7fbaa25f.png",
+      "localFile": "planet-mercury.png",
+      "sha256": "c45f995fec93f1fbd0789e43b0f344dd512ac9f4e2a12a0d0d54db64b2926104"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgSun1",
+      "name": "planet-sun.png",
+      "url": "https://www.figma.com/api/mcp/asset/0bfbbd7b-5960-4d49-a1c2-7d7817fa6c01.png",
+      "localFile": "planet-sun.png",
+      "sha256": "bd63bfbf5769f5ef8fff9e2c0571b22ed86be7c473434bf3ecbfdae0d32676cf"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgLuna1",
+      "name": "planet-luna.png",
+      "url": "https://www.figma.com/api/mcp/asset/0779da01-7fa3-4463-a238-ab8fcc5014e0.png",
+      "localFile": "planet-luna.png",
+      "sha256": "db054f8d2c71c89f9a8c1b5c9f7a128540b8c4b4f922758b4fd23c3b6508a046"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgEarth1",
+      "name": "planet-earth.png",
+      "url": "https://www.figma.com/api/mcp/asset/47289b77-c1d7-4200-b3df-a295978475e9.png",
+      "localFile": "planet-earth.png",
+      "sha256": "f496b272a02ecdedce7d8b030b4cfd94347b33511701a5518d26467dfac5b2fb"
+    },
+    {
+      "nodeId": "39:1043",
+      "variable": "imgJupiter1",
+      "name": "planet-jupiter.png",
+      "url": "https://www.figma.com/api/mcp/asset/8491865d-88a9-4534-860b-068f2e1381d6.png",
+      "localFile": "planet-jupiter.png",
+      "sha256": "cdda5e2c9ecf444eb8f86edfc93ed56d03a9608273b7a296d13615ed580ead02"
+    },
+    {
+      "nodeId": "25:90",
+      "variable": "imgCalendar",
+      "name": "calendar.svg",
+      "url": "https://www.figma.com/api/mcp/asset/52221115-c346-48b2-870b-c8a89cf3958c.svg",
+      "localFile": "calendar.svg",
+      "sha256": "0b26bc9997940c8325d0912f7e883b5427bebcb910bfb6c58d332be9bec480b2"
+    },
+    {
+      "nodeId": "44:1494",
+      "variable": "imgGroup9",
+      "name": "clipboard.svg",
+      "url": "https://www.figma.com/api/mcp/asset/33c9a6b4-4013-409f-9267-b8d36469886a.svg",
+      "localFile": "clipboard.svg",
+      "sha256": "b0b508835604b2a3bb038dc8bd62884278b96f0ff3d43042531ba6953e58b658"
+    },
+    {
+      "nodeId": "25:354",
+      "variable": "imgPlaySolid",
+      "name": "select-arrow.svg",
+      "url": "https://www.figma.com/api/mcp/asset/16516461-c541-4640-b343-5bd7338c53f5.svg",
+      "localFile": "select-arrow.svg",
+      "sha256": "a09603fa8d1d8c628426943b1160e2f5a7ad370d21f73f4e36b79669e7f61440"
+    },
+    {
+      "nodeId": "25:354",
+      "variable": "imgCheckSquareSolid",
+      "name": "check.svg",
+      "url": "https://www.figma.com/api/mcp/asset/5758681c-2cff-4c75-89ef-65dac62fe64d.svg",
+      "localFile": "check.svg",
+      "sha256": "ca933d8c258bdf119ebfe0dfd90c3b93cca06b87859d0729767c0b84d0333f00"
+    },
+    {
+      "nodeId": "44:1670",
+      "variable": "imgArrowSeparate",
+      "name": "spin-up.svg",
+      "url": "https://www.figma.com/api/mcp/asset/cd3cc99f-26a3-441b-8b5d-09c17d840d6b.svg",
+      "localFile": "spin-up.svg",
+      "sha256": "1021e37aa8df8de3a1835ea9324583870791b215f0abb9be2b0da8e455b848d2"
+    },
+    {
+      "nodeId": "44:1670",
+      "variable": "imgArrowUnion",
+      "name": "spin-down.svg",
+      "url": "https://www.figma.com/api/mcp/asset/8122e707-cf48-4997-83e9-b3eb2b5dc2d8.svg",
+      "localFile": "spin-down.svg",
+      "sha256": "12ddf7e6339e3c603ed4978d80b9f445bdb82fc1fe470c06f14f958939ab57ab"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgWp76272031",
+      "name": "starfield.png",
+      "url": "https://www.figma.com/api/mcp/asset/30cf6776-60d2-40bd-8fb8-7b18ba29f98b.png",
+      "localFile": "../starfield.png",
+      "sha256": "087d3d2a5f1d2dd58e84832075f87d60d300b9db6f6bbde5a43445cfd8c9b1a7"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgRectangle",
+      "name": "sidebar-glass.png",
+      "url": "https://www.figma.com/api/mcp/asset/c3670d0f-95f2-40ca-a08c-e2e3c05a185a.png",
+      "localFile": "../sidebar-glass.png",
+      "sha256": "f3152115b4463c8439cd8ad34510e910b1143e0a54a824e791ffbc185d057d95"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgRectangle1",
+      "name": "rail-noise.png",
+      "url": "https://www.figma.com/api/mcp/asset/52478ecf-eda1-46eb-8e12-47a360ba4757.png",
+      "localFile": "../rail-noise.png",
+      "sha256": "36376818e487cbd2531686f2966a64ec902357e4208e0d3e757a8c3eb39c78db"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgRectangle2",
+      "name": "header-grain.png",
+      "url": "https://www.figma.com/api/mcp/asset/c80f0964-3710-4f2a-80cc-33c9450646ad.png",
+      "localFile": "../header-grain.png",
+      "sha256": "030d2ba43a9082750b197081e1d6a45e781568a44d43e6aead368d2128159715"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup5",
+      "name": "nav-solar.svg",
+      "url": "https://www.figma.com/api/mcp/asset/678eefef-008a-492e-8066-950121e5fa2c.svg",
+      "localFile": "nav-solar.svg",
+      "sha256": "ed7be8c2408ae9206677d17c9bd3a770fc16fc92208d83499a781c62aeb968b4"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup6",
+      "name": "nav-earth-moon.svg",
+      "url": "https://www.figma.com/api/mcp/asset/98c26a50-5d8c-40cb-af21-2ed0e5e739d6.svg",
+      "localFile": "nav-earth-moon.svg",
+      "sha256": "a04ef738463225788caa4cf1800716ff0bb87654b7ac49c60f31bf4a145366e2"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgCircle",
+      "name": "nav-moon.svg",
+      "url": "https://www.figma.com/api/mcp/asset/bbd9a68a-6cdb-45b7-8613-9ac1501f8eb8.svg",
+      "localFile": "nav-moon.svg",
+      "sha256": "23d21f127ea371451b7451567bf88b358cf2a77c2d58b2d78b5a2870ffea4189"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgRectangle5",
+      "name": "panel-grain.png",
+      "url": "https://www.figma.com/api/mcp/asset/cb05e10e-ffbb-47b5-bf59-8958f238ca12.png",
+      "localFile": "../panel-grain.png",
+      "sha256": "7ee69e63763e4681e16dca575075a8e37e828eabbf84cfd91c8e33fa3d58e447"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup7",
+      "name": "nav-south.svg",
+      "url": "https://www.figma.com/api/mcp/asset/6fecf958-cf48-425b-b55e-ef3ce3566b59.svg",
+      "localFile": "nav-south.svg",
+      "sha256": "68907ab021e92c027bb77195aeebaa4421fe4f811dd7d284dda0c6706146ebf7"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup",
+      "name": "sites.svg",
+      "url": "https://www.figma.com/api/mcp/asset/2a991630-0825-471a-8650-99d362236120.svg",
+      "localFile": "../sites.svg",
+      "sha256": "da2bfb261ed9c295a5167eca259f8578afcc91c2a3ec929ba040b77eaa1b5935"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup1",
+      "name": "clock.svg",
+      "url": "https://www.figma.com/api/mcp/asset/5f106be4-2c22-43e2-b963-d37b34cb4e61.svg",
+      "localFile": "../clock.svg",
+      "sha256": "35646f9346522a42001b6b5f907d8076a4e66584cf13402ef7a2a4d52ebb657a"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup2",
+      "name": "layers.svg",
+      "url": "https://www.figma.com/api/mcp/asset/d5ae87ea-a8ce-46d8-9d4a-08d919f7bf89.svg",
+      "localFile": "../layers.svg",
+      "sha256": "0ee490fe8cd001b1a3f1134911aeb0f50258a42fd8840b57de11b81d6c5ea2db"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup3",
+      "name": "compare.svg",
+      "url": "https://www.figma.com/api/mcp/asset/68bfa341-211f-4434-b0e7-7a45704a52a4.svg",
+      "localFile": "../compare.svg",
+      "sha256": "6fa994d94763322abd55c1fb632e0b21f0f012e57c8054f4c47e64b456622402"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgGroup4",
+      "name": "settings.svg",
+      "url": "https://www.figma.com/api/mcp/asset/dd221f6a-f070-45f1-947b-c167ba39a0e2.svg",
+      "localFile": "../settings.svg",
+      "sha256": "613bb8319dbc0f70c19cd862007223c5ca77dc9eab605fc7b0809ded1a394177"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgArrowLeft",
+      "name": "collapse.svg",
+      "url": "https://www.figma.com/api/mcp/asset/1b61de03-6eb4-4f04-8fac-a7e2801b1a7e.svg",
+      "localFile": "../collapse.svg",
+      "sha256": "8640fb267d757bdfbcbaf98e07e446aaa478f3211cd453056f39b2e9e8e3cc07"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgLine1",
+      "name": "sidebar-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/b3097b0b-2769-4b3e-927b-e4b8d5521755.svg",
+      "localFile": "sidebar-rule.svg",
+      "sha256": "58af90ab83944d89262e8f338a512218724ba4168f321ea3b7a0477e29ede694"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgLine2",
+      "name": "inspector-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/6d80fb3a-3268-4f2b-9bfd-28b8c4fe83e3.svg",
+      "localFile": "inspector-rule.svg",
+      "sha256": "e4ba766aed6040d77cd57a6360528a11c5dd70bf12ae5f3dd5c62d1af12e5602"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgLine5",
+      "name": "planning-rule.svg",
+      "url": "https://www.figma.com/api/mcp/asset/d540e359-3a73-46d6-b209-f9181b079417.svg",
+      "localFile": "planning-rule.svg",
+      "sha256": "c819aab82d39493d3d54e1052b73f8b182e00508b66916d39895c67b32457a66"
+    },
+    {
+      "nodeId": "1:3",
+      "variable": "imgRectangle3",
+      "name": "left-shade.svg",
+      "url": "https://www.figma.com/api/mcp/asset/8635cb2c-7707-451c-aa89-aad7ad4fdcd1.svg",
+      "localFile": "../left-shade.svg",
+      "sha256": "cbad3bd75658f9a209bf53c16b31a87452be6b38cac9232c449026ccf3c3431d"
+    }
+  ]
+}

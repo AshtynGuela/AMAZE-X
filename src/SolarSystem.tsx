@@ -300,6 +300,7 @@ function SolarScene({
       const node = labelRefs.current[id];
       if (!node) continue;
       if (!labels || (id !== "sun" && !positions[id])) {
+        node.style.visibility = 'hidden';
         node.style.display = "none";
         const line = node.previousElementSibling as SVGElement;
         if (line) line.style.display = "none";
@@ -379,6 +380,7 @@ function SolarScene({
       }
       if (chosen) placed.push(chosen);
       node.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      node.style.visibility = 'visible';
       const leader = node.previousElementSibling as SVGSVGElement;
       if (leader) {
         leader.style.display = "";
@@ -491,6 +493,7 @@ export default function SolarSystem({
   children: any;
 }) {
   const labelRefs = useRef<Record<string, HTMLButtonElement>>({});
+  const [bodyDetails, setBodyDetails] = useState(false);
   const state = useScout(),
     [selected, setSelected] = useState("sun"),
     [nav, setNav] = useState({ kind: "whole", id: "sun", seq: 0 }),
@@ -547,6 +550,7 @@ export default function SolarSystem({
       setNav((n) => ({ kind, id, seq: n.seq + 1 })),
     choose = (id: string) => {
       setSelected(id);
+      setBodyDetails(true);
       state.set({selectedBody:id});
       navigate("focus", id);
     };
@@ -581,7 +585,7 @@ export default function SolarSystem({
                     opacity=".65"
                   />
                 </svg>
-                <button
+                <button style={{visibility:'hidden'}}
                   ref={(el) => {
                     if (el) labelRefs.current[b.id] = el;
                   }}
@@ -613,21 +617,18 @@ export default function SolarSystem({
               className={selected === "sun" ? "selected" : ""}
               onClick={() => choose("sun")}
             >
-              <span className="planet-dot" style={{ background: "#ffcd76" }} />
+              <img className="planet-thumbnail" src="/assets/site-ui/current/planet-sun.png" alt="" width="30" height="27" />
               Sun
             </button>
-            {SOLAR_BODIES.map((b) => (
+            {['moon','earth','jupiter','mars','mercury','neptune','saturn','uranus','venus'].map(id => SOLAR_BODIES.find(body => body.id === id)!).map((b) => (
               <button
                 key={b.id}
                 className={selected === b.id ? "selected" : ""}
                 disabled={!packets[b.id]}
                 onClick={() => choose(b.id)}
               >
-                <span className="planet-dot" style={{ background: b.color }} />
-                {b.name}
-                {b.id === "earth" && (
-                  <span className="lunar-tag">Moon access</span>
-                )}
+                <img className={`planet-thumbnail planet-thumbnail-${b.id}`} src={`/assets/site-ui/current/planet-${b.id === 'moon' ? 'luna' : b.id}.png`} alt="" width={b.id === 'saturn' ? 41.333 : 30} height="28" />
+                {b.id === 'moon' ? 'Luna' : b.name}
               </button>
             ))}
           </section>
@@ -660,7 +661,9 @@ export default function SolarSystem({
               Labels
             </label>
           </div>
-          <aside className="solar-info" aria-label="Selected Solar System body">
+          <aside className={'solar-info' + (bodyDetails ? ' is-expanded' : '')} aria-label="Selected Solar System body">
+            <button className="solar-details-toggle" aria-expanded={bodyDetails} onClick={() => setBodyDetails(value => !value)}>Body details · {body?.name || 'Sun'}</button>
+            <div className="solar-info-content" hidden={!bodyDetails}>
             <h1>{body?.name || "Sun"}</h1>
             {selected === "sun" ? (
               <p>Our star, at the centre of this map.</p>
@@ -755,6 +758,7 @@ export default function SolarSystem({
                 Retry missing data
               </button>
             )}
+            </div>
           </aside>
         </>
       )}

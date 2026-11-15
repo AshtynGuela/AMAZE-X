@@ -169,6 +169,10 @@ export default function App() {
   useEffect(() => {
     if (!solar && !useScout.getState().rail) useScout.getState().set({ rail: "sites" });
   }, [solar]);
+  useEffect(() => {
+    if (state.compare) useScout.getState().set({ rail: 'compare' });
+    else if (useScout.getState().rail === 'compare') useScout.getState().set({rail:null});
+  }, [state.compare]);
   const activeScenario = selectedScenario(state),
     probe = useMemo(
       () => ({
@@ -179,8 +183,8 @@ export default function App() {
       }),
       [state.selected, Math.floor(state.time / DAY)],
     ),
-    analysis = useMetrics(solar ? undefined : activeScenario || probe),
-    probeAnalysis = useMetrics(!solar && activeScenario && (inspector || state.rail === "clock") ? probe : undefined),
+    analysis = useMetrics(solar && !packet ? undefined : activeScenario || probe),
+    probeAnalysis = useMetrics((!solar || !!packet) && activeScenario && (inspector || state.rail === "clock") ? probe : undefined),
     eventAnalysis = activeScenario ? probeAnalysis : analysis,
     m = analysis?.metrics;
   const filteredSites = sites.filter((s) =>
@@ -352,6 +356,7 @@ export default function App() {
   const rail = (id: string) =>
     state.set({
       rail: state.rail === id ? null : id,
+      ...(id !== 'compare' ? {compare:false} : {}),
       ...(solar && id !== "clock" ? { view: "globe" as const } : {}),
     });
   const share = async ():Promise<ActionResult> => {
@@ -603,13 +608,13 @@ export default function App() {
       data-phone-details={phoneDetails && inspector ? "open" : "closed"}
       className={
         "app" +
-        (inspector && !solar ? " has-inspector" : "") +
-        (solar ? " solar-mode" : " lunar-ui") +
+        (inspector ? " has-inspector" : "") +
+        " lunar-ui" + (solar ? " solar-mode" : "") +
         (intro ? " app--entering" : "")
       }
       onPointerDown={() => menu && setMenu(null)}
     >
-      {!solar && <SiteBackdrop />}
+      <SiteBackdrop />
       <a className="skip-link" href="#site-inspector">
         Skip to site analysis
       </a>
@@ -653,7 +658,7 @@ export default function App() {
             });
           }}
         >
-          {solar ? <><Orbit size={29} strokeWidth={1.4} /><span><strong>{APP_NAME}</strong></span></> : <SiteWordmark />}
+          <SiteWordmark />
         </a>
         <div className="top-centre">
           <span className="live-dot" />{" "}
@@ -716,12 +721,13 @@ export default function App() {
               id === "compare"
                 ? state.set({
                     compare: !state.compare,
+                    rail: state.compare ? null : "compare",
                     ...(solar ? { view: "globe" as const } : {}),
                   })
                 : rail(id)
             }
           >
-            {solar ? <Icon size={20} /> : <span className={`site-rail-icon site-rail-${id}`}><SiteAsset name={id === "sites" ? "sites" : id === "clock" ? "clock" : id as string} /></span>}
+            <span className={`site-rail-icon site-rail-${id}`}><SiteAsset name={id === "sites" ? "sites" : id === "clock" ? "clock" : id as string} /></span>
             <span>{label}</span>
           </button>
         ))}
@@ -735,23 +741,24 @@ export default function App() {
         </IconButton>
       </nav>
       {state.rail && (
-        <section className="flyout" aria-label={state.rail + " controls"}>
+        <section className="flyout" data-tool={state.rail} aria-label={state.rail + " controls"}>
           <header>
             <h2>
               {
                 {
                   sites: solar ? "Landing sites" : "Landing Sites",
-                  clock: "Mission clock",
-                  layers: "Map layers",
+                  clock: "Mission Clock",
+                  layers: "Map Layers",
                   settings: "Settings",
+                  compare: <><span className="site-compare-heading">Compare Landing</span><br/>Plans</>,
                 }[state.rail]
               }
             </h2>
             <IconButton
               label="Close tools"
-              onClick={() => state.set({ rail: null })}
+              onClick={() => state.set({ rail: null, ...(state.rail === 'compare' ? {compare:false} : {}) })}
             >
-              {solar ? <X size={17} /> : <SiteAsset name="collapse" />}
+              <SiteAsset name="collapse" />
             </IconButton>
           </header>
           {state.rail === "sites" && (
@@ -815,8 +822,11 @@ export default function App() {
           {state.rail === "clock" && (
             <>
               <p className="muted">Every live scenario follows this clock.</p>
+              <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
+              <div className="site-clock-fields">
               <label>
-                Date and time · UTC
+                Date and Time (UTC)
+                <span className="site-date-field">
                 <input
                   type="datetime-local"
                   min="1969-01-01T00:00"
@@ -848,6 +858,8 @@ export default function App() {
                     setClockEditing(false);
                   }}
                 />
+                <span className="site-calendar-icon"><SiteAsset name="calendar" /></span>
+                </span>
               </label>
               <div className="button-row">
                 <button
@@ -863,30 +875,29 @@ export default function App() {
                     state.set({ time: Date.parse(activeScenario!.epoch) })
                   }
                 >
-                  Landing date
+                  Landing Site
                 </button>
               </div>
-              <h3>Playback speed</h3>
+              <h3>Playback Speed</h3>
               <div className="speed-buttons">
-                {[1, 60, 3600, 86400].map((s, i) => (
+                {[1, 3600, 60, 86400].map((s, i) => (
                   <button
                     key={s}
                     className={state.speed === s ? "active" : ""}
                     onClick={() => state.set({ speed: s })}
                   >
-                    {["1×", "60×", "1 h/s", "1 d/s"][i]}
+                    {["1×", "1 h/s", "60×", "1 d/s"][i]}
                   </button>
                 ))}
               </div>
-              <h3>Next crossing</h3>
-              <EventList
-                events={eventAnalysis?.metrics?.events || []}
-                time={state.time}
-              />
               <p className="data-note">
                 UTC throughout. Future times use Horizons’ currently known
                 leap-second assumptions.
               </p>
+              <details className="site-extra-controls"><summary>Next crossing</summary>
+                <EventList events={eventAnalysis?.metrics?.events || []} time={state.time} />
+              </details>
+              </div>
             </>
           )}
           {state.rail === "layers" && (
@@ -894,6 +905,8 @@ export default function App() {
               <p className="muted">
                 Explore the surface without losing context.
               </p>
+              <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
+              <div className="site-layer-fields">
               {[
                 ["grid", "Coordinate grid"],
                 ["markers", "Landing-site markers"],
@@ -921,6 +934,7 @@ export default function App() {
                 readouts use JPL positions.
               </p>
               <h3>NASA precomputed layers</h3>
+              <span className="site-map-select">
               <select
                 aria-label="Precomputed map overlay"
                 value={state.statLayer || ""}
@@ -947,6 +961,8 @@ export default function App() {
                   {!state.layerManifest.earth_visibility ? "(preparing)" : ""}
                 </option>
               </select>
+              <span className="site-map-select-arrow"><SiteAsset name="select-arrow" /></span>
+              </span>
               <p className="data-note">
                 Precomputed NASA Moon Trek products cover part of the south
                 polar region. Their source period differs from the selected
@@ -966,12 +982,16 @@ export default function App() {
                 Sunlight follows the selected date. Terrain shadows are shown in
                 the flyover and horizon views.
               </p>
+              </div>
             </>
           )}
           {state.rail === "settings" && (
             <>
+              <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
+              <div className="site-settings-fields">
               <label>
                 Sensor height above ground (mast)
+                <span className="site-select-field">
                 <select
                   value={state.mastM}
                   onChange={(e) => state.set({ mastM: +e.target.value })}
@@ -982,9 +1002,12 @@ export default function App() {
                     </option>
                   ))}
                 </select>
+                <span className="site-field-arrow"><SiteAsset name="spin-down" /></span>
+                </span>
               </label>
               <label>
-                Minimum usable Earth angle · degrees
+                Minimum usable Earth angle (degrees)
+                <span className="site-number-field">
                 <input
                   type="number"
                   min="0"
@@ -996,13 +1019,21 @@ export default function App() {
                     })
                   }
                 />
+                <span className="site-field-spinner"><SiteAsset name="spin-up" /></span>
+                </span>
               </label>
               <p className="data-note">
                 Earth contact requires Earth’s centre to clear the horizon and
                 your antenna’s minimum elevation.
               </p>
-              {!solar && <>
-                <h3>Navigation</h3>
+              <h3>Rocky Connection</h3>
+              <p className="connection">
+                {!health ? "Checking connection…" : health.primaryConfigured
+                  ? "Text and map questions"
+                  : health.fallbackConfigured ? "Text questions" : "Chat unavailable"}
+              </p>
+              <button className="full-width" onClick={() => state.set({ welcome: true })}>Replay Welcome</button>
+              <details className="site-extra-controls"><summary>Navigation and help</summary>
                 <label>Explore view<select aria-label="Explore view" value={state.view} onChange={event => state.set({ view: event.target.value as any })}>
                   <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option>
                   <option value="globe">Moon</option><option value="polar_south">South pole</option><option value="polar_north">North pole</option>
@@ -1011,18 +1042,25 @@ export default function App() {
                 <label><input type="checkbox" checked={inspector} onChange={event => setInspector(event.target.checked)} /> Show site details</label>
                 <button onClick={() => setSources(true)}>Data and methodology</button>
                 <button onClick={() => setHelp(true)}>Controls and shortcuts</button>
-              </>}
-              <h3>Rocky connection</h3>
-              <p className="connection">
-                {!health ? "Checking connection…" : health.primaryConfigured
-                  ? "Text and map questions"
-                  : health.fallbackConfigured ? "Text questions" : "Chat unavailable"}
-              </p>
-              <button onClick={() => state.set({ welcome: true })}>
-                Replay welcome
-              </button>
+              </details>
+              </div>
             </>
           )}
+          {state.rail === 'compare' && <>
+            <span className="site-scenario-count">{state.scenarios.length}/4</span>
+            <div className="site-sidebar-rule"><SiteAsset name="sidebar-rule" /></div>
+            {state.scenarios.length ? <div className="site-scenario-list">
+              {state.scenarios.map(scenario => <button key={scenario.id} onClick={() => {
+                state.select(scenario.siteId); state.set({activeScenarioId:scenario.id,compare:true});
+              }}>{sites.find(s => s.id === scenario.siteId)?.name || scenario.siteId}<small>{scenario.epoch === 'live' ? 'Follows mission clock' : utc(Date.parse(scenario.epoch))}</small></button>)}
+              <button className="full-width" onClick={() => state.set({scenarioDialog:true})} disabled={state.scenarios.length >= 4}>Add scenario</button>
+              <button className="full-width" onClick={share}>Share plans</button>
+            </div> : <div className="site-compare-empty">
+              <SiteAsset name="clipboard" />
+              <p>Same site, different date. Or a different place entirely.</p>
+              <button onClick={() => state.set({scenarioDialog:true})}>Create your first scenario</button>
+            </div>}
+          </>}
         </section>
       )}
       <div className="phone-only phone-map-controls" aria-label="Phone map controls">
@@ -1046,9 +1084,10 @@ export default function App() {
             key={view}
             aria-label={label}
             className={state.view === view ? "active" : ""}
-            onClick={() => state.set({ view })}
+            onClick={() => state.set({ view, cameraCommand: null, focusVersion: state.focusVersion + 1,
+              ...(view === 'solar_system' ? {rail:null,compare:false} : {}) })}
           >
-            <Icon size={15} />
+            <span className={`site-view-icon site-view-${view}`}><SiteAsset name={view === 'solar_system' ? 'nav-solar' : view === 'overview' ? 'nav-earth-moon' : view === 'globe' ? 'nav-moon' : 'nav-south'} />{view === 'overview' && <SiteAsset name="nav-moon" />}</span>
             <span>{label}</span>
           </button>
         ))}
@@ -1058,7 +1097,7 @@ export default function App() {
         >
           <LocateFixed size={17} />
         </IconButton>
-        {!solar && (
+        {(
           <IconButton
             label={inspector ? "Hide inspector" : "Show inspector"}
             onClick={() => setInspector((v) => !v)}
@@ -1071,7 +1110,7 @@ export default function App() {
           </IconButton>
         )}
       </div>
-      {inspector && !solar && site && (
+      {inspector && site && (
         <aside id="site-inspector" className="inspector" tabIndex={-1}>
           <header>
             <div>
@@ -1423,7 +1462,7 @@ export default function App() {
           </p>
         </section>
       )}
-      {state.compare && !solar && (
+      {state.compare && state.scenarios.length > 0 && !solar && (
         <section className="compare-tray">
           <header>
             <h2>
@@ -1462,25 +1501,25 @@ export default function App() {
         </section>
       )}
       <div className="clockbar">
-        {!solar && <button className="site-view-360" aria-label="Show whole Moon" title="Show whole Moon" onClick={() => state.set({ view: "globe", cameraCommand: { mode: "whole_moon", version: (state.cameraCommand?.version ?? 0) + 1 } })}><SiteAsset name="view-360" /></button>}
+        {<button className="site-view-360" aria-label="Show whole Moon" title="Show whole Moon" onClick={() => state.set({ view: "globe", cameraCommand: { mode: "whole_moon", version: (state.cameraCommand?.version ?? 0) + 1 } })}><SiteAsset name="view-360" /></button>}
         <div className="transport">
           <IconButton
             label="Step back one hour"
             onClick={() => state.set({ time: state.time - HOUR })}
           >
-            {solar ? <SkipBack size={16} /> : <SiteAsset name="previous" />}
+            <SiteAsset name="previous" />
           </IconButton>
           <IconButton
             label={state.playing ? "Pause time" : "Play time"}
             onClick={() => state.set({ playing: !state.playing })}
           >
-            {state.playing ? <Pause size={17} /> : solar ? <Play size={17} /> : <SiteAsset name="play" />}
+            {state.playing ? <Pause size={17} /> : <SiteAsset name="play" />}
           </IconButton>
           <IconButton
             label="Step forward one hour"
             onClick={() => state.set({ time: state.time + HOUR })}
           >
-            {solar ? <SkipForward size={16} /> : <SiteAsset name="next" />}
+            <SiteAsset name="next" />
           </IconButton>
         </div>
         <button className="clock-readout" title="Mission time in UTC · open time controls" onClick={() => rail("clock")}>
@@ -1607,7 +1646,7 @@ export default function App() {
         {slip && <DateSlip close={() => setSlip(false)} />}
       </Suspense>
       <Suspense fallback={null}>
-        {rockyStarted && !state.welcome && <Rocky snapshot={() => snapshot.current()} hasInspector={inspector && !solar} />}
+        {rockyStarted && !state.welcome && <Rocky snapshot={() => snapshot.current()} hasInspector={inspector} />}
       </Suspense>
       {state.welcome && <Welcome ready={intro && entryReady} prepare={prepareWorld} begin={() => {
         setEntryReady(false);

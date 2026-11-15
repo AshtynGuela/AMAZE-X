@@ -11,7 +11,9 @@ export function withPolarTerrain(base: CesiumTerrainProvider) {
   const dispose = () => { disposed = true; controllers.forEach(c => c.abort()); controllers.clear(); cache.clear(); };
   const polar = (y: number, level: number) => {
     const north = 90 - y * 180 / 2 ** level;
-    return level >= 3 && (north >= 80 || north - 180 / 2 ** level <= -80);
+    // The root/ancestor tiles are rendered while descendants stream. Letting
+    // those use the upstream cap reintroduces the pinched pole on first load.
+    return north >= 80 || north - 180 / 2 ** level <= -80;
   };
   const maximum = (y: number, level: number) => y < 2 ** (level - 1) ? 12 : 14;
   const requestTileGeometry = (x: number, y: number, level: number, request?: Request) => {

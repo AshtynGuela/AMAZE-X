@@ -99,3 +99,19 @@ See `BUILD_STATUS.md` for delivery status, `PROJECT_BRIEF.md` for decisions, `DE
 ## Loading and caching
 
 See [PERFORMANCE.md](PERFORMANCE.md) for the measured startup reduction, cache lifetimes, build-time compression and focused verification commands. `npm run build` creates the compressed asset variants; production must serve `dist` through the Node server to use the API and compression/cache policies.
+
+## Polar startup and celestial context
+
+Polar imagery uses cap-only geographic tile matrices (60–90°N and 60–90°S), rather than placing each cap in a full-world tile with mostly transparent rows. The four source-derived root images and their hashes are in `public/data/polar-basemap`; rebuild them with `python scripts/prepare_polar_overview.py`. Higher detail streams from QuickMap orthographic imagery through `/api/polar-imagery?hemisphere=north|south`. Numeric LOLA terrain remains independent. The pole-safe mesh covers all ancestor levels, including initial root tiles, with conservative hemisphere visibility bounds.
+
+`engine/celestial-context.mjs` pairs real JPL Earth/Moon heliocentric vectors, converts them to the current lunar body frame, and derives Earth-relative-to-Moon and Earth-around-Sun paths. No extrapolated positions are substituted. The Moon viewer renders physical body positions/radii; its orbit camera commands zoom out to the whole system. Earth–Moon overview keeps readable spacing and physical distance readouts. The retained view/camera bars expose the same orbit commands to users and Rocky.
+
+Focused checks: `node --experimental-strip-types --test tests/polar-rendering.test.mjs tests/celestial-context.test.mjs` and `python -m unittest discover -s tests -p "test_quickmap_polar.py"`.
+
+## Figma instrument panels — 15 November 2026
+
+Frames `1:3`, `25:90`, `39:1043`, `25:354`, `44:1494`, and `44:1670` share the Figma shell in `src/site-ui.css` and `src/SiteChrome.tsx`. The clock, layers, comparison empty state, settings and Solar System catalogue use existing store actions. Planet thumbnails and control icons are unmodified local Figma exports under `public/assets/site-ui/current`; provenance records hashes and exact matches reused from the original shared assets. The common starfield appears behind every map. Plots, elevations, visibility and dates remain live calculation outputs rather than design sample values.
+
+The lunar inspector stays on the right in Solar System view. Planet facts, scale controls and source information remain available through **Body details**, which also opens when selecting a planet. Clock crossings and navigation/help controls remain in expandable sections. The empty comparison is in the left tool panel; saved scenarios retain the full comparison board. Moon camera controls and main-scene Earth/Sun orbit navigation remain available. Phone destination lists scroll inside their panel.
+
+Verification covered all six desktop states and three phone captures, loading/rendered geometry for 168 visible asset instances, playback speed, layer toggling, antenna input, scenario-dialog opening and body details, with no browser page errors. The production build and 14 focused engine/action/polar checks pass. The mechanical detector's legacy palette advisories and D-DIN Expanded warnings reflect the supplied Figma styling taking priority over the older base tokens. This update does not constitute a new scientific accuracy validation.

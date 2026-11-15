@@ -1,10 +1,10 @@
 {
-  "origin": "http://127.0.0.1:5213",
-  "checkedUtc": "2026-11-14T11:52:31.671Z",
+  "origin": "http://127.0.0.1:5242",
+  "checkedUtc": "2026-11-15T00:15:56.934Z",
   "tiles": [
     {
       "name": "north",
-      "responseMs": 1453.4,
+      "responseMs": 125.21,
       "resolutionM": 20,
       "poleHeightM": 8.25,
       "poleSpreadM": 0,
@@ -14,7 +14,7 @@
     },
     {
       "name": "south",
-      "responseMs": 1048.67,
+      "responseMs": 15.91,
       "resolutionM": 5,
       "poleHeightM": 1289.362,
       "poleSpreadM": 0,
@@ -27,7 +27,7 @@
   "profiles": [
     {
       "quality": "quick",
-      "responseMs": 37.79,
+      "responseMs": 30.21,
       "calculationSeconds": 21.96,
       "rays": 180,
       "elevationM": -7.763,
@@ -35,7 +35,7 @@
     },
     {
       "quality": "full",
-      "responseMs": 137.63,
+      "responseMs": 85.94,
       "calculationSeconds": 277.949,
       "rays": 720,
       "elevationM": -7.763,

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArcType, BoundingSphere, CameraEventType, Cartesian2, Cartesian3, Cartographic,
-  CesiumTerrainProvider, Color, Credit, DirectionalLight, DistanceDisplayCondition,
-  Ellipsoid, EllipsoidTerrainProvider, Entity, GeographicTilingScheme,
+  CesiumTerrainProvider, Color, Credit, DirectionalLight, DistanceDisplayCondition, CustomDataSource, ImageMaterialProperty,
+  Ellipsoid, EllipsoidTerrainProvider, EllipsoidalOccluder, Entity, GeographicTilingScheme, SceneTransforms,
   HeadingPitchRange, HeightReference, JulianDate, KeyboardEventModifier,
   Math as CesiumMath, Matrix3, Quaternion as CesiumQuaternion, ScreenSpaceEventHandler, ScreenSpaceEventType, ShadowMode,
   UrlTemplateImageryProvider, Viewer, sampleTerrain, Rectangle,
+  Primitive, GeometryInstance, EllipsoidGeometry, MaterialAppearance, Material, Matrix4,
 } from "cesium";
 import { ArrowDown, ArrowUp, Compass, Globe2, Info, Minus, Mountain, Plus, Settings2, X } from "lucide-react";
 import { conditions } from "../engine/index.mjs";
@@ -17,12 +18,17 @@ import type { RankedSite } from "./NearbySites";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./lunar-map.css";
 import { withPolarTerrain } from "./polarTerrain";
+import type { CelestialContext } from './celestial-context';
+import { lunarBodyOrientation } from '../engine/celestial-context.mjs';
+import { useEarthOrientation } from './EarthGlobe';
+import { Vector3 } from 'three';
 
 const moon = new Ellipsoid(LUNAR_RADIUS_M, LUNAR_RADIUS_M, LUNAR_RADIUS_M);
 const angle = CesiumMath.toRadians;
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 type Cursor = { lat: number; lon: number; height: number; resolution: number; distance: number };
 type Props = {
+  celestial?: CelestialContext;
   onContext: (point: { x: number; y: number; lat: number; lon: number }) => void;
   onSnapshot: (capture: () => string) => void;
   onBearing: (bearing: number) => void;
@@ -52,8 +58,10 @@ export default function LunarGlobe(props: Props) {
   const latest = useRef(props);
   latest.current = props;
   const state = useScout();
+  const earthOrientation = useEarthOrientation();
   const selected = [...state.sites, ...state.custom].find(site => site.id === state.selected);
   const [ready, setReady] = useState(false);
+  const [bodyLabels, setBodyLabels] = useState<{ name: string; mode: string; x: number; y: number }[]>([]);
   const [cursor, setCursor] = useState<Cursor | null>(null);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState("");
@@ -100,6 +108,9 @@ export default function LunarGlobe(props: Props) {
       contextOptions: { webgl: { alpha: true, antialias: true, preserveDrawingBuffer: true } },
     });
     viewer.current = v;
+    // The Sun and annual Earth orbit are beyond Cesium's default far plane.
+    // Cesium splits the depth range into frustums, retaining near-surface detail.
+    v.camera.frustum.far = 1e13;
     previousTime.current = useScout.getState().time;
     v.resolutionScale = Math.min(devicePixelRatio, 1.5) / devicePixelRatio;
     v.scene.backgroundColor = Color.TRANSPARENT;
@@ -124,7 +135,7 @@ export default function LunarGlobe(props: Props) {
     v.shadowMap.darkness = 0.05;
     const controls = v.scene.screenSpaceCameraController;
     controls.minimumZoomDistance = 0.5;
-    controls.maximumZoomDistance = LUNAR_RADIUS_M * 12;
+    controls.maximumZoomDistance = 2e12;
     controls.enableCollisionDetection = true;
     controls.rotateEventTypes = [CameraEventType.LEFT_DRAG];
     controls.zoomEventTypes = [CameraEventType.WHEEL, CameraEventType.PINCH, CameraEventType.RIGHT_DRAG];
@@ -151,10 +162,11 @@ export default function LunarGlobe(props: Props) {
     });
     v.imageryLayers.addImageryProvider(imagery);
     for (const north of [true, false]) {
+      const rectangle = Rectangle.fromDegrees(-180, north ? 60 : -90, 180, north ? 90 : -60);
       v.imageryLayers.addImageryProvider(new UrlTemplateImageryProvider({
-        url: "/api/polar-imagery/{z}/{x}/{y}.png?source=quickmap-v2",
-        tilingScheme: new GeographicTilingScheme({ ellipsoid: moon }),
-        rectangle: Rectangle.fromDegrees(-180, north ? 60 : -90, 180, north ? 90 : -60),
+        url: `/api/polar-imagery/{z}/{x}/{y}.png?source=cap-v4&hemisphere=${north ? 'north' : 'south'}`,
+        tilingScheme: new GeographicTilingScheme({ ellipsoid: moon, rectangle }),
+        rectangle,
         tileWidth: 512, tileHeight: 512, maximumLevel: 13,
         credit: new Credit("ACT QuickMap · LROC orthographic polar mosaics"),
         hasAlphaChannel: true,
@@ -327,6 +339,67 @@ export default function LunarGlobe(props: Props) {
   }, [ready, state.sites, state.custom, state.selected, state.markers, state.grid, state.view, props.nearbyPins]);
 
   useEffect(() => {
+    const v = viewer.current, context = props.celestial;
+    if (!v || !ready || !context) return;
+    const bodies = new CustomDataSource('Earth, Sun and JPL orbit paths');
+    let alive = true;
+    const cartesian = (xyz: number[]) => Cartesian3.fromArray(xyz);
+    bodies.entities.add({ id: 'celestial-earth', position: cartesian(context.earthM),
+      orientation: CesiumQuaternion.unpack(lunarBodyOrientation('earth', state.time, earthOrientation)),
+      ellipsoid: { radii: new Cartesian3(6371008.4, 6371008.4, 6371008.4),
+        material: new ImageMaterialProperty({ image: '/assets/planets/earth-map.jpg' }) },
+    });
+    // A self-lit solar sphere must not inherit the Moon's directional light.
+    const sun = v.scene.primitives.add(new Primitive({
+      geometryInstances: new GeometryInstance({
+        geometry: new EllipsoidGeometry({ radii: new Cartesian3(696340000,696340000,696340000),
+          stackPartitions: 24, slicePartitions: 48, vertexFormat: MaterialAppearance.MaterialSupport.BASIC.vertexFormat }),
+        modelMatrix: Matrix4.fromTranslation(cartesian(context.sunM)),
+      }),
+      appearance: new MaterialAppearance({ flat: true, closed: true, translucent: false,
+        materialSupport: MaterialAppearance.MaterialSupport.BASIC,
+        material: Material.fromType('Color', { color: Color.fromCssColorString('#ffce68') }) }),
+    }));
+    for (const [id, points, color] of [
+      ['lunar-orbit', context.earthLunarOrbitM, '#8db7e4'],
+      ['solar-orbit', context.earthSolarOrbitM, '#d4bd7c'],
+    ] as const) if (points.length > 1) bodies.entities.add({ id,
+      polyline: { positions: points.map(cartesian), width: 1.3, arcType: ArcType.NONE,
+        material: Color.fromCssColorString(color).withAlpha(.6) },
+    });
+    void v.dataSources.add(bodies).then(() => {
+      if (!alive) { if (!v.isDestroyed()) v.dataSources.remove(bodies, true); return; }
+      v.scene.requestRender();
+    });
+    return () => {
+      alive = false;
+      if (!v.isDestroyed()) { v.dataSources.remove(bodies, true); v.scene.primitives.remove(sun); }
+    };
+  }, [ready, props.celestial, state.time, earthOrientation]);
+
+  useEffect(() => {
+    const v = viewer.current, context = props.celestial;
+    if (!v || !ready || !context) return;
+    // Project labels in double precision: GPU glyph offsets lose precision at
+    // Sun–Earth distances even though the body geometry remains valid.
+    const update = () => {
+      const occluder = new EllipsoidalOccluder(moon, v.camera.positionWC);
+      const volume = v.camera.frustum.computeCullingVolume(v.camera.positionWC, v.camera.directionWC, v.camera.upWC);
+      const labels = [{ name: 'EARTH', mode: 'earth', at: context.earthM }, { name: 'SUN', mode: 'sun', at: context.sunM }].flatMap(body => {
+        const at = Cartesian3.fromArray(body.at);
+        if (!occluder.isPointVisible(at) || volume.computeVisibility(new BoundingSphere(at, 0)) < 0) return [];
+        const point = SceneTransforms.worldToWindowCoordinates(v.scene, at);
+        return point && point.x >= 0 && point.y >= 0 && point.x <= v.canvas.clientWidth && point.y <= v.canvas.clientHeight
+          ? [{ name: body.name, mode: body.mode, x: Math.round(point.x), y: Math.round(point.y) }] : [];
+      });
+      setBodyLabels(before => JSON.stringify(before) === JSON.stringify(labels) ? before : labels);
+    };
+    const remove = v.scene.postRender.addEventListener(update);
+    v.scene.requestRender();
+    return remove;
+  }, [ready, props.celestial]);
+
+  useEffect(() => {
     const v = viewer.current;
     if (!v || !ready) return;
     const polar = state.view === "polar_south" || state.view === "polar_north";
@@ -415,23 +488,23 @@ export default function LunarGlobe(props: Props) {
     const packet = packetFor(state, state.selected);
     const terrainRecord = state.terrains[state.selected];
     const sky = packet && conditions(packet, state.time, getMask(terrainRecord, state.mastM), state.minAntennaEl);
-    const sunPosition = sky && packet && lunarSunPosition(sky.sun, {
+    const sunPosition = (sky && packet && lunarSunPosition(sky.sun, {
       ...packet.observer, elevationM: (packet.observer.elevationM ?? 0) + state.mastM,
-    });
+    })) || (props.celestial ? new Vector3().fromArray(props.celestial.sunM) : null);
     const missionLighting = !props.terrainLighting && !!sunPosition;
     const local = state.view === "surface" || state.view === "horizon";
     v.scene.globe.enableLighting = missionLighting;
     v.shadows = missionLighting && local && showTerrain;
     v.scene.globe.shadows = v.shadows ? ShadowMode.ENABLED : ShadowMode.DISABLED;
-    if (missionLighting && sunPosition && sky) {
+    if (missionLighting && sunPosition) {
       sunPosition.normalize().negate();
       v.scene.light = new DirectionalLight({ direction: new Cartesian3(sunPosition.x, sunPosition.y, sunPosition.z),
-        color: Color.WHITE, intensity: 2 * (local ? sky.sun.eclipse.transmission : 1) });
+        color: Color.WHITE, intensity: 2 * (local ? (sky?.sun.eclipse.transmission ?? 1) : 1) });
     }
     host.current?.setAttribute("data-lighting", missionLighting ? "sunlight" : "imagery");
     host.current?.setAttribute("data-terrain-shadows", String(v.shadows));
     v.scene.requestRender();
-  }, [ready, state.time, state.view, state.selected, state.packets, state.terrains, state.mastM, state.minAntennaEl, props.terrainLighting, showTerrain]);
+  }, [ready, state.time, state.view, state.selected, state.packets, state.terrains, state.mastM, state.minAntennaEl, props.terrainLighting, showTerrain, props.celestial]);
 
   const look = useCallback((pitch: number) => {
     const v = viewer.current;
@@ -441,13 +514,30 @@ export default function LunarGlobe(props: Props) {
   useEffect(() => {
     const v=viewer.current, command=state.cameraCommand;
     if(!v||!ready||!command)return;
+    const context = props.celestial;
+    if (['earth_moon_orbit','solar_orbit','earth','sun'].includes(command.mode)) {
+      if (!context) return;
+      const earth = Cartesian3.fromArray(context.earthM), sun = Cartesian3.fromArray(context.sunM);
+      let sphere: BoundingSphere;
+      if (command.mode === 'earth' || command.mode === 'sun')
+        sphere = new BoundingSphere(command.mode === 'earth' ? earth : sun, command.mode === 'earth' ? 6371008.4 : 696340000);
+      else sphere = BoundingSphere.fromPoints(command.mode === 'solar_orbit'
+        ? [Cartesian3.ZERO, sun, ...context.earthSolarOrbitM.map(p => Cartesian3.fromArray(p))]
+        : [Cartesian3.ZERO, earth, ...context.earthLunarOrbitM.map(p => Cartesian3.fromArray(p))]);
+      v.camera.cancelFlight();
+      const orbit = command.mode === 'solar_orbit' || command.mode === 'earth_moon_orbit';
+      v.camera.flyToBoundingSphere(sphere, { duration: reducedMotion() ? 0 : 1.2,
+        offset: new HeadingPitchRange(0,-.65,Math.max(10000000,sphere.radius*(orbit ? 6 : 3.3))) });
+      v.scene.requestRender();
+      return;
+    }
     if(command.mode==="whole_moon")home();
     else if(command.mode==="site")state.set({focusVersion:useScout.getState().focusVersion+1});
     else if(command.mode==="horizon")look(angle(-3));
     else if(command.mode==="overhead")look(-Math.PI/2);
     else v.camera.setView({orientation:{heading:command.mode==="north"?0:angle(command.az??0),pitch:command.el===undefined?v.camera.pitch:angle(command.el),roll:0}});
     v.scene.requestRender();
-  }, [ready,state.cameraCommand,home,look]);
+  }, [ready,state.cameraCommand,home,look,!!props.celestial]);
   const zoom = (factor: number) => {
     const v = viewer.current;
     if (!v) return;
@@ -512,6 +602,9 @@ export default function LunarGlobe(props: Props) {
 
   return <>
     <div ref={host} className="lunar-canvas" />
+    {bodyLabels.map(body => <button key={body.mode} className={`lunar-body-label ${body.mode}`}
+      aria-label={`Focus ${body.name === 'SUN' ? 'Sun' : 'Earth'} in lunar scene`} style={{ left: body.x, top: body.y }}
+      onClick={() => state.set({ cameraCommand: { mode: body.mode, version: (state.cameraCommand?.version ?? 0) + 1 } })}>{body.name}</button>)}
     <nav className="lunar-camera" aria-label="Lunar camera controls">
       <button type="button" aria-label="Zoom in on Moon" title="Zoom in" onClick={()=>zoom(.45)}><Plus size={17}/></button>
       <button type="button" aria-label="Zoom out from Moon" title="Zoom out" onClick={()=>zoom(-.8)}><Minus size={17}/></button>

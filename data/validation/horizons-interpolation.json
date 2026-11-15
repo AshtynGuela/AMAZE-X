@@ -1,5 +1,5 @@
 {
-  "validatedUtc": "2026-11-12T18:28:37.099Z",
+  "validatedUtc": "2026-11-15T00:14:53.857Z",
   "method": "Direct off-grid JPL Horizons observer tables vs local normalized unit-vector direction interpolation; two sites/dates, not the full acceptance matrix.",
   "results": [
     {
@@ -11,11 +11,11 @@
         "name": "NASA/JPL Horizons",
         "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C0%27&START_TIME=%271969-07-20+00%3A00%3A00%27&STOP_TIME=%271969-07-21+00%3A00%3A00%27&STEP_SIZE=%2710m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
         "apiSignature": {
-          "source": "NASA/JPL Horizons API",
-          "version": "1.2"
+          "version": "1.2",
+          "source": "NASA/JPL Horizons API"
         },
-        "sha256": "bf89aa0c2ad1dc3888fef2283ed721252d0daebc5ff274c2bc141e72f73c4101",
-        "retrievedUtc": "2026-11-12T16:31:18.779Z",
+        "sha256": "64d5eb1a1704c3ecc7443798a82f98f44005b85313326b67a131dd729c04ff56",
+        "retrievedUtc": "2026-11-15T00:14:51.513Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -28,11 +28,11 @@
         "name": "NASA/JPL Horizons",
         "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C0%27&START_TIME=%271969-07-20+00%3A00%3A00%27&STOP_TIME=%271969-07-21+00%3A00%3A00%27&STEP_SIZE=%277m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
         "apiSignature": {
-          "source": "NASA/JPL Horizons API",
-          "version": "1.2"
+          "version": "1.2",
+          "source": "NASA/JPL Horizons API"
         },
-        "sha256": "51cca7f680b7149127aa8a068c016facada668468232bb626de3e935f68443bc",
-        "retrievedUtc": "2026-11-12T16:31:20.226Z",
+        "sha256": "8e1a72cd03fd1ce35838b6f86048ce3ed967143983dd7ba490affa8d9e406531",
+        "retrievedUtc": "2026-11-15T00:14:51.822Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -54,8 +54,8 @@
           "version": "1.2",
           "source": "NASA/JPL Horizons API"
         },
-        "sha256": "45b171f71627ba678c362ae77b55d237bdbd2a0aaf509606ef5d24c6fb127ed4",
-        "retrievedUtc": "2026-11-12T16:31:20.830Z",
+        "sha256": "971befa91706220ac25f3645ccd97bc04a9685a30f06a1cfb0b599227fd93faf",
+        "retrievedUtc": "2026-11-15T00:14:52.122Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -68,11 +68,11 @@
         "name": "NASA/JPL Horizons",
         "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27399%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%2723.47314%2C0.67416%2C0%27&START_TIME=%271969-07-20+00%3A00%3A00%27&STOP_TIME=%271969-07-21+00%3A00%3A00%27&STEP_SIZE=%277m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
         "apiSignature": {
-          "source": "NASA/JPL Horizons API",
-          "version": "1.2"
+          "version": "1.2",
+          "source": "NASA/JPL Horizons API"
         },
-        "sha256": "5d3f05b0bc52e87f68e4530522736b8d40770f2cc83ea84268b91efe98389f38",
-        "retrievedUtc": "2026-11-12T16:31:21.692Z",
+        "sha256": "3d4bf1be9536bbae9fafb7b12948f61dd373c712d7ecbdc9a35bd79d5a5e106c",
+        "retrievedUtc": "2026-11-15T00:14:52.425Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -91,11 +91,11 @@
         "name": "NASA/JPL Horizons",
         "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%271.44%2C-80.13%2C0%27&START_TIME=%272026-11-13+00%3A00%3A00%27&STOP_TIME=%272026-11-14+00%3A00%3A00%27&STEP_SIZE=%2710m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
         "apiSignature": {
-          "source": "NASA/JPL Horizons API",
-          "version": "1.2"
+          "version": "1.2",
+          "source": "NASA/JPL Horizons API"
         },
-        "sha256": "97feddd399162b79abb6de94bd7a7435f7c23897034fd614793b3f50f426b7b3",
-        "retrievedUtc": "2026-11-12T16:31:22.469Z",
+        "sha256": "6d748dda0c231d0e8a29fad908ffc76df13e334ff96d1095377149f43e2a1c50",
+        "retrievedUtc": "2026-11-15T00:14:52.725Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -108,11 +108,11 @@
         "name": "NASA/JPL Horizons",
         "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27coord%40301%27&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%271.44%2C-80.13%2C0%27&START_TIME=%272026-11-13+00%3A00%3A00%27&STOP_TIME=%272026-11-14+00%3A00%3A00%27&STEP_SIZE=%277m%27&QUANTITIES=%274%2C13%2C20%27&CSV_FORMAT=%27YES%27&EXTRA_PREC=%27YES%27&OBJ_DATA=%27NO%27&APPARENT=%27AIRLESS%27&TIME_DIGITS=%27SECONDS%27&CAL_FORMAT=%27CAL%27",
         "apiSignature": {
-          "source": "NASA/JPL Horizons API",
-          "version": "1.2"
+          "version": "1.2",
+          "source": "NASA/JPL Horizons API"
         },
-        "sha256": "1c6b9201cf910b29add8311184835856bccc5fe74fc8659f2a5efb1dc863a648",
-        "retrievedUtc": "2026-11-12T16:31:23.782Z",
+        "sha256": "7a32c27e0beef05cb1af8019b12bce1a4625499e0ed376e8da098fe36473c0df",
+        "retrievedUtc": "2026-11-15T00:14:53.239Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -134,8 +134,8 @@
           "source": "NASA/JPL Horizons API",
           "version": "1.2"
         },
-        "sha256": "0685ac46464f76e9dff683fb289d4ddefc4c0d306042e1615b959374a7670ebc",
-        "retrievedUtc": "2026-11-12T16:31:25.409Z",
+        "sha256": "2263cddce741adec00c88a5f4e769a0abe381bad78dada23b6a21bdaf13579f9",
+        "retrievedUtc": "2026-11-15T00:14:53.544Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",
@@ -151,8 +151,8 @@
           "version": "1.2",
           "source": "NASA/JPL Horizons API"
         },
-        "sha256": "706f9df9bec35ee59bbf238134df6011bda8bf2c884a0f0ef37bfcbc32d59548",
-        "retrievedUtc": "2026-11-12T16:31:27.865Z",
+        "sha256": "26cd09feb4cc1e5f9876920d25e8e0f9e33d088f7ef1739a668184106a09b181",
+        "retrievedUtc": "2026-11-15T00:14:53.846Z",
         "frame": "MEAN_ME (high precision)",
         "model": "DE441",
         "refraction": "AIRLESS",

@@ -145,14 +145,15 @@ app.get("/api/polar-imagery/:level/:x/:y.png", async (req, res, next) => {
     const level = z.coerce.number().int().min(0).max(13).parse(req.params.level);
     const x = z.coerce.number().int().min(0).max(2 ** (level + 1) - 1).parse(req.params.x);
     const y = z.coerce.number().int().min(0).max(2 ** level - 1).parse(req.params.y);
+    const hemisphere = z.enum(['north','south']).optional().parse(req.query.hemisphere);
     const north = 90 - y * 180 / 2 ** level;
-    if (north < 60 && north - 180 / 2 ** level > -60) return res.sendStatus(400);
-    res.set("Cache-Control", "public, max-age=604800").type("png").send(await polarImagery(level, x, y));
+    if (!hemisphere && north < 60 && north - 180 / 2 ** level > -60) return res.sendStatus(400);
+    res.set("Cache-Control", "public, max-age=604800").type("png").send(await polarImagery(level, x, y, hemisphere));
   } catch (error) { next(error); }
 });
 app.get("/api/polar-terrain/:level/:x/:y", async (req, res, next) => {
   try {
-    const level = z.coerce.number().int().min(3).max(14).parse(req.params.level);
+    const level = z.coerce.number().int().min(0).max(14).parse(req.params.level);
     const x = z.coerce.number().int().min(0).max(2 ** (level + 1) - 1).parse(req.params.x);
     const y = z.coerce.number().int().min(0).max(2 ** level - 1).parse(req.params.y);
     const north = 90 - y * 180 / 2 ** level, south = north - 180 / 2 ** level;

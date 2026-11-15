@@ -21,7 +21,7 @@ export const AppAction = z.discriminatedUnion("type", [
   z.object({type:z.literal("set_playback"),playing:z.boolean(),speed:z.union([z.literal(1),z.literal(60),z.literal(3600),z.literal(86400)]).optional()}),
   z.object({type:z.literal("set_map_options"),trueScale:z.boolean().optional(),grid:z.boolean().optional(),markers:z.boolean().optional(),terrain:z.boolean().optional(),statLayer:z.enum(["none","illumination","earth_visibility"]).optional()}),
   z.object({type:z.literal("set_lunar_options"),lighting:z.boolean().optional(),rotation:z.boolean().optional(),freeAxis:z.boolean().optional(),terrain:z.boolean().optional()}),
-  z.object({type:z.literal("set_camera"),mode:z.enum(["whole_system","inner_planets","whole_moon","site","north","horizon","overhead","bearing"]),az:z.number().min(0).max(360).optional(),el:z.number().min(-89).max(89).optional()}),
+  z.object({type:z.literal("set_camera"),mode:z.enum(["whole_system","inner_planets","whole_moon","earth_moon_orbit","solar_orbit","earth","sun","site","north","horizon","overhead","bearing"]),az:z.number().min(0).max(360).optional(),el:z.number().min(-89).max(89).optional()}),
   z.object({type:z.literal("set_observer"),mastM:z.union([z.literal(0),z.literal(2),z.literal(5),z.literal(10)]).optional(),minAntennaEl:z.number().min(0).max(90).optional()}),
   z.object({type:z.literal("create_site"),name:z.string().trim().min(1).max(64),lat:z.number().min(-90).max(90),lon:z.number().min(-180).max(180)}),
   z.object({type:z.literal("create_scenario"),siteId,iso:iso.optional(),durationDays:duration,profile:MissionLimits.optional(),flightProfile:z.enum(Object.keys(MISSION_PROFILES)).optional()}),
@@ -35,7 +35,7 @@ export const AppAction = z.discriminatedUnion("type", [
 ]);
 
 export const APP_FEATURE_GUIDE = `AMAZE-X features (use the same names as the interface):
-Navigation: set_view for Solar System, Earth–Moon, Moon, poles, Observer horizon or Terrain flyover; navigate_body focuses any Solar System body. set_camera offers whole-system, inner-planets, whole-Moon, selected-site, north, horizon, overhead and compass-bearing views.
+Navigation: set_view for Solar System, Earth–Moon, Moon, poles, Observer horizon or Terrain flyover; navigate_body focuses any Solar System body. set_camera offers whole-system, inner-planets, whole-Moon, Earth–Moon orbit, Sun–Earth orbit, Earth, Sun, selected-site, north, horizon, overhead and compass-bearing views.
 Time: set_time changes the UTC clock; set_playback starts/stops playback and changes speed. Moon rotation, lighting and shadows follow that clock.
 Map: set_map_options changes readable/physical scale, coordinate grid, site markers, 3D terrain and historical south-pole sunlight/Earth-visibility layers. set_lunar_options controls Sun lighting, lunar rotation and unlocked camera axis.
 Analysis: lookup_site and get_conditions read real positions and mission totals; compare_sites calculates the trade-off between sites. find_landing_windows calculates candidate arrivals and estimated departures from historical mission flight times; never describe these as certified trajectories. find_events finds rise/set times.

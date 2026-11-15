@@ -10,6 +10,19 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import polar_imagery_tile
 
 class QuickMapPolarTest(unittest.TestCase):
+    def test_polar_only_tile_uses_its_entire_height_for_the_visible_cap(self):
+        calls = []
+        def sample(projection, lat, lon, *args):
+            calls.append((projection, float(np.min(lat)), float(np.max(lat))))
+            return np.full((len(lat), 3), 99), np.ones(len(lat))
+        with patch('quickmap_polar.sample', side_effect=sample):
+            for cap in ('NP', 'SP'):
+                image = np.asarray(polar_imagery_tile.polar_image(0, 0, 0, Path('.'), cap=cap))
+                self.assertEqual(image.shape, (512, 512, 4))
+        self.assertEqual([c[0] for c in calls], ['NP', 'SP'])
+        for _, low, high in calls:
+            self.assertLess(high-low, 30)
+            self.assertGreater(high-low, 29)
     def test_concurrent_windows_cache_writer_keeps_a_valid_tile(self):
         import quickmap_polar
         stream=BytesIO(); Image.new('RGB',(512,512),(90,90,90)).save(stream,'JPEG')

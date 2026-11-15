@@ -58,3 +58,25 @@ test('polar relief normals point outward and respond to real elevation slopes', 
   }
   assert.ok(tilted,'Normals must describe relief, not merely a smooth sphere');
 });
+
+
+test('the first visible globe levels use pole-safe geometry rather than upstream cylindrical caps', async () => {
+  const original = globalThis.fetch;
+  const tilingScheme = new GeographicTilingScheme({ellipsoid:new Ellipsoid(1737400,1737400,1737400)});
+  globalThis.fetch = async () => ({ok:true,json:async()=>({size:65,resolutionM:7600,heightsM:Array(65*65).fill(-1200)})});
+  let upstream = 0;
+  const provider=withPolarTerrain({tilingScheme,hasVertexNormals:true,getTileDataAvailable:()=>true,
+    requestTileGeometry:()=>{ upstream++; throw new Error('uncorrected cap'); }});
+  try {
+    for (const level of [0,1,2]) for (const y of new Set([0,2**level-1])) {
+      const tile=await provider.requestTileGeometry(0,y,level);
+      assert.ok(tile._encodedNormals?.length>0);
+      assert.ok(Cartesian3.magnitude(tile._horizonOcclusionPoint)>1,
+        'A root hemisphere must never use the lunar centre as its horizon-culling point');
+      const rectangle=tilingScheme.tileXYToRectangle(0,y,level);
+      for (const edge of [rectangle.north,rectangle.south].filter(lat=>Math.abs(Math.abs(lat)-Math.PI/2)<1e-12))
+        assert.equal(tile.interpolateHeight(rectangle,rectangle.west+rectangle.width*.37,edge),-1200);
+    }
+    assert.equal(upstream,0);
+  } finally { provider.dispose(); globalThis.fetch=original; }
+});

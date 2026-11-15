@@ -10,14 +10,17 @@ def sample(*args):
     return quickmap_polar.sample(*args)
 
 
-def polar_image(level, x, y, folder):
+def polar_image(level, x, y, folder, cap=None):
     step = 180 / 2 ** level
     size = 512
     longitude, latitude = np.meshgrid(-180 + (x + (np.arange(size)+.5)/size) * step,
-                                      90 - (y + (np.arange(size)+.5)/size) * step)
+                                      (90 if cap != 'SP' else -60) - (y + (np.arange(size)+.5)/size) *
+                                      ((30 if cap else 180) / 2 ** level))
     rgba = np.zeros((size, size, 4), dtype=np.uint8)
     # A level-zero geographic tile contains both polar caps.
     for north in (True, False):
+        if cap and cap != ('NP' if north else 'SP'):
+            continue
         inside = latitude >= 60 if north else latitude <= -60
         if inside.any():
             projection = "NP" if north else "SP"
@@ -33,4 +36,4 @@ def polar_image(level, x, y, folder):
 if __name__ == "__main__":
     level, x, y = map(int, sys.argv[1:4])
     folder = Path(sys.argv[5]); folder.mkdir(parents=True, exist_ok=True)
-    polar_image(level, x, y, folder).save(sys.argv[4], "PNG", optimize=True)
+    polar_image(level, x, y, folder, cap=sys.argv[6] if len(sys.argv)>6 else None).save(sys.argv[4], "PNG", optimize=True)

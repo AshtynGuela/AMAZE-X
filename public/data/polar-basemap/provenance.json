@@ -1,0 +1,50 @@
+{
+  "source": "https://lroc-tiles.quickmap.io/tiles/wac_nac_nacroi/",
+  "projection": "QuickMap orthographic caps reprojected into cap-only geographic root tiles",
+  "tileSize": 512,
+  "sourceLevel": 2,
+  "displayOnly": true,
+  "scientificElevations": "NASA LOLA independently sampled; these are imagery only",
+  "assets": [
+    {
+      "file": "north-0-0-0.png",
+      "sha256": "f12c3879fbc28886695118673e9847c91225f6df305d290de11af4ae5e1d555e",
+      "geographicBounds": [
+        -180,
+        60,
+        0,
+        90
+      ]
+    },
+    {
+      "file": "north-0-1-0.png",
+      "sha256": "e26bc9e915b56629eabf107572c9605d41282e7fd1c0ad33cd8c41a2818f347d",
+      "geographicBounds": [
+        0,
+        60,
+        180,
+        90
+      ]
+    },
+    {
+      "file": "south-0-0-0.png",
+      "sha256": "37bf8b1fadc2a9b350da83a2f6d3683c4cf9eb99fd28581ca463cbeb08d24619",
+      "geographicBounds": [
+        -180,
+        -90,
+        0,
+        -60
+      ]
+    },
+    {
+      "file": "south-0-1-0.png",
+      "sha256": "7cb0812369085a55d6cf50333f31f5f0888a668e601284402a019c1178c365ea",
+      "geographicBounds": [
+        0,
+        -90,
+        180,
+        -60
+      ]
+    }
+  ]
+}

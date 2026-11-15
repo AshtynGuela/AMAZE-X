@@ -41,10 +41,12 @@ function SpaceArt({ onReady }: { onReady?: () => void }) {
 export default function SpaceBackdrop({ onReady }: { onReady?: () => void }) {
   const solar = useScout(state => state.view === "solar_system");
   const gl = useThree(state => state.gl);
-  useEffect(() => { gl.setClearColor("#080d12", solar ? 1 : 0); }, [gl, solar]);
-  if (!solar) return null;
-  return <>
-    <color attach="background" args={["#080d12"]} />
-    <Suspense fallback={null}><SpaceArt onReady={onReady} /></Suspense>
-  </>;
+  useEffect(() => {
+    gl.setClearColor('#000000', 0);
+    if (!solar) return;
+    const frame = requestAnimationFrame(() => onReady?.());
+    return () => cancelAnimationFrame(frame);
+  }, [gl, solar, onReady]);
+  // The shared Figma starfield is rendered once behind every map by SiteBackdrop.
+  return null;
 }
