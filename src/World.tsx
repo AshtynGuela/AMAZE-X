@@ -17,7 +17,7 @@ import type { RankedSite } from "./NearbySites";
 import "./lunar-map.css";
 import CelestialOrbits from "./CelestialOrbits";
 import SceneLabel from "./SceneLabel";
-import { SiteCoordinatesEmpty } from "./SiteChrome";
+import { SiteCoordinates } from "./SiteChrome";
 import { useCelestialContext, type CelestialContext } from "./celestial-context";
 const LunarGlobe = lazy(() => import("./LunarGlobe"));
 export const lunarPoint = (lat: number, lon: number, r = 3.5) =>
@@ -1155,7 +1155,7 @@ export default function World(props: {
           </Suspense>
         </Canvas>
         )}
-      {(solar || state.view === 'overview') && <SiteCoordinatesEmpty />}
+      {(solar || state.view === 'overview') && <SiteCoordinates />}
       {!solar && <nav className="lunar-orbit-nav" aria-label="Earth and Sun orbit navigation">
         <button onClick={() => orbitCamera("earth_moon_orbit")} disabled={!celestial.data}>Earth–Moon orbit</button>
         <button onClick={() => orbitCamera("solar_orbit")} disabled={!celestial.data}>Sun–Earth orbit</button>
@@ -1178,9 +1178,12 @@ export default function World(props: {
             </button>
           )}
       </div>
-      {polarGround && <div className="lunar-view-mode polar-local-mode" aria-label="Polar surface controls">
+      {polarGround && state.view === "horizon" && selected && <SiteCoordinates
+        site={selected} elevationM={state.terrains[selected.id]?.elevationM ?? selected.elevationM ?? undefined}
+      />}
+      {polarGround && <div className={`lunar-view-mode polar-local-mode${state.view === "horizon" ? " horizon-mode-switch" : ""}`} aria-label="Polar surface controls">
         <span>{state.view === "surface" ? "Polar terrain flyover" : "Polar observer horizon"}</span>
-        <button type="button" onClick={() => state.set({view:state.view === "surface" ? "horizon" : "surface",focusVersion:state.focusVersion+1})}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
+        <button type="button" className="desktop-map-switch" onClick={() => state.set({view:state.view === "surface" ? "horizon" : "surface",focusVersion:state.focusVersion+1})}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
         {state.view === "surface" && <button type="button" aria-pressed={polarCloseUp} onClick={() => setPolarCloseUp(value=>!value)}>{polarCloseUp ? "Wide view" : "Close-up · 60 m"}</button>}
         <button type="button" onClick={toggleTerrainLighting}>{terrainLighting ? "Use mission lighting" : "Inspect imagery"}</button>
       </div>}

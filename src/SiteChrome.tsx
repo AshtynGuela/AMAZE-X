@@ -28,9 +28,21 @@ export function SiteWordmark() {
   return <span className="site-wordmark" aria-hidden="true">AMAZE<span>X</span></span>;
 }
 
-export function SiteCoordinatesEmpty() {
-  return <div className="lunar-cursor" aria-label="Lunar cursor measurements">
-    <dl>{['Lat','Lon','Height','Res','Dist to Cursor'].map(label => <div key={label}><dt>{label}</dt><dd>—</dd></div>)}</dl>
+export function formatCoordinate(value: number, positive: string, negative: string) {
+  return `${Math.abs(value).toFixed(5)}° ${value < 0 ? negative : positive}`;
+}
+
+export function SiteCoordinates({ site, elevationM }: {
+  site?: { lat: number; lon: number };
+  elevationM?: number;
+}) {
+  const fields = site ? [
+    ['Lat', formatCoordinate(site.lat, 'N', 'S')],
+    ['Lon', formatCoordinate(site.lon, 'E', 'W')],
+    ['Height', elevationM === undefined ? '—' : `${elevationM.toFixed(0)} m`],
+  ] : ['Lat', 'Lon', 'Height', 'Res', 'Dist to Cursor'].map(label => [label, '—']);
+  return <div className={`lunar-cursor${site ? ' phone-only polar-site-coordinates' : ''}`} aria-label={site ? 'Selected site coordinates' : 'Lunar cursor measurements'}>
+    <dl>{fields.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     <a href="https://quickmap.lroc.im-ldi.com/" target="_blank" rel="noreferrer">Moon surface readout · QuickMap · LROC</a>
   </div>;
 }

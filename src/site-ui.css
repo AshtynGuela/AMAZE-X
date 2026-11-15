@@ -168,6 +168,7 @@
 .app.lunar-ui .lunar-cursor dd { min-width: 0; min-height: 18px; font-size: 10px; line-height: 1.5; letter-spacing: 1.5px; color: #fff; white-space: nowrap; }
 .app.lunar-ui .lunar-cursor > a { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); margin: 0; font-size: 7px; letter-spacing: 1.6px; color: #ddd; }
 .app.lunar-ui .lunar-measurement-help { display: none; }
+.app.lunar-ui .polar-site-coordinates { display: none; }
 .app.lunar-ui .lunar-camera { display: flex; right: 14px; top: 150px; }
 .app.lunar-ui.has-inspector .lunar-camera { right: calc(var(--site-inspector) + 14px); }
 .app.lunar-ui:has(.flyout[aria-label="settings controls"]) .lunar-camera { display: flex; }
@@ -522,7 +523,8 @@
   .app.lunar-ui .phone-map-controls label { display: block; }
   .app.lunar-ui .phone-map-controls label > span { position: absolute; clip-path: inset(50%); }
   .app.lunar-ui .phone-map-controls select { width: 100%; }
-  .app.lunar-ui .view-toolbar { display: none; }
+  .app.lunar-ui :is(.view-toolbar, .lunar-orbit-nav, .horizon-mode-switch, .desktop-map-switch),
+  .app.lunar-ui .lunar-camera > .desktop-map-switch { display: none; }
   .app.lunar-ui .instrument-rail {
     position: absolute;
     inset: auto 0 0;
@@ -631,12 +633,6 @@
   .app.lunar-ui .comparison-explainer { margin-bottom: 14px; }
   .app.lunar-ui .nearby-limit-fields { grid-template-columns: minmax(0,1fr); gap: 0; }
   .app.lunar-ui .nearby-results li { align-items: flex-start; font-size: 16px; }
-  .app.lunar-ui .lunar-orbit-nav {
-    inset: var(--phone-map-top) auto auto 8px;
-    transform: none;
-    max-width: calc(100vw - 108px);
-  }
-  .app.lunar-ui .lunar-orbit-nav > button { min-height: 44px; }
   .app.lunar-ui :is(.lunar-camera, .has-inspector .lunar-camera) {
     top: var(--phone-map-top);
     right: 8px;
@@ -646,17 +642,34 @@
     inset: calc(var(--phone-top) + 162px) 8px calc(var(--phone-nav) + 8px);
     max-height: none;
   }
-  .app.lunar-ui .lunar-cursor {
+  .app.lunar-ui .lunar-cursor, .app.lunar-ui.has-inspector .lunar-cursor {
     bottom: var(--phone-bottom);
-    left: 8px;
-    right: 8px;
-    min-height: 0;
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    width: auto;
+    height: auto;
+    min-height: 80px;
+    transform: none;
+    padding: 8px 12px;
     background: var(--panel);
   }
+  .app.lunar-ui .lunar-cursor > a { display: none; }
+  .app.lunar-ui .lunar-cursor dd { white-space: normal; }
+  .app.lunar-ui .polar-site-coordinates { display: flex; align-items: center; }
   .app.lunar-ui .lunar-canvas .cesium-viewer-bottom { left: 8px; bottom: calc(var(--phone-bottom) + 80px); }
   .app.lunar-ui .lunar-stream-state { top: calc(var(--phone-map-top) + 78px); left: 8px; }
   .app.lunar-ui .lunar-view-mode { top: calc(var(--phone-map-top) + 112px); left: 8px; }
-  .app.lunar-ui:has(.lunar-canvas) .horizon-readout { top: auto; bottom: calc(var(--phone-bottom) + 72px); left: 8px; max-height: 32dvh; }
+  .app.lunar-ui:has(.lunar-cursor) .horizon-readout {
+    top: auto;
+    bottom: calc(var(--phone-bottom) + 96px);
+    left: 8px;
+    right: 8px;
+    width: auto;
+    z-index: 37;
+    max-height: min(32dvh, max(54px, calc(100dvh - var(--phone-map-top) - var(--phone-bottom) - 104px)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .app.lunar-ui.solar-mode .solar-catalog {
     inset: var(--phone-map-top) 16px auto;
     max-height: none;

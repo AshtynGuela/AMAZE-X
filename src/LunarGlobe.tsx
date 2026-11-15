@@ -14,6 +14,7 @@ import { lunarCameraDelta, lunarSunPosition } from "../engine/lunar-scene.mjs";
 import { LUNAR_RADIUS_M, LUNAR_IMAGERY_URL, LUNAR_MAP_CREDIT, LUNAR_MAP_SOURCE } from "../engine/lunar-map.mjs";
 import { getMask, packetFor, useScout } from "./store";
 import { captureMap } from "./mapSnapshot";
+import { formatCoordinate } from "./SiteChrome";
 import type { RankedSite } from "./NearbySites";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./lunar-map.css";
@@ -63,6 +64,8 @@ export default function LunarGlobe(props: Props) {
   const [ready, setReady] = useState(false);
   const [bodyLabels, setBodyLabels] = useState<{ name: string; mode: string; x: number; y: number }[]>([]);
   const [cursor, setCursor] = useState<Cursor | null>(null);
+  const horizonSite = state.view === "horizon" ? selected : undefined;
+  const coordinates = cursor ?? horizonSite;
   const [pending, setPending] = useState(0);
   const [error, setError] = useState("");
   const [settings, setSettings] = useState(false);
@@ -74,6 +77,7 @@ export default function LunarGlobe(props: Props) {
   const [closeUp, setCloseUp] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [measurementHelp, setMeasurementHelp] = useState(false);
+  useEffect(() => { setCursor(null); }, [state.selected, state.view]);
   const inertialView = state.lunarRotation;
   const setInertialView = (value:boolean) => state.set({lunarRotation:value});
   const home = useCallback(() => {
@@ -609,7 +613,7 @@ export default function LunarGlobe(props: Props) {
       <button type="button" aria-label="Zoom in on Moon" title="Zoom in" onClick={()=>zoom(.45)}><Plus size={17}/></button>
       <button type="button" aria-label="Zoom out from Moon" title="Zoom out" onClick={()=>zoom(-.8)}><Minus size={17}/></button>
       <button type="button" aria-label="Show whole Moon" title="Whole Moon" onClick={home}><Globe2 size={17}/></button>
-      <button type="button" aria-label="Terrain flyover at selected site" title="Terrain flyover · 900 m" onClick={() => {
+      <button type="button" className="desktop-map-switch" aria-label="Terrain flyover at selected site" title="Terrain flyover · 900 m" onClick={() => {
         const s = useScout.getState(); s.set({view:"surface",focusVersion:s.focusVersion+1});
       }}><Mountain size={17}/></button>
       <button type="button" aria-label="Face lunar north" title="Face north" onClick={()=>{
@@ -637,19 +641,19 @@ export default function LunarGlobe(props: Props) {
     </div>
     <div className="lunar-cursor" aria-label="Lunar cursor measurements">
       <dl>
-        <div><dt>Lat</dt><dd>{cursor ? `${Math.abs(cursor.lat).toFixed(5)}° ${cursor.lat<0?"S":"N"}` : "—"}</dd></div>
-        <div><dt>Lon</dt><dd>{cursor ? `${Math.abs(cursor.lon).toFixed(5)}° ${cursor.lon<0?"W":"E"}` : "—"}</dd></div>
+        <div><dt>Lat</dt><dd>{coordinates ? formatCoordinate(coordinates.lat, "N", "S") : "—"}</dd></div>
+        <div><dt>Lon</dt><dd>{coordinates ? formatCoordinate(coordinates.lon, "E", "W") : "—"}</dd></div>
         <div><dt title="Displayed terrain elevation relative to the 1,737.4 km lunar reference sphere">Height</dt><dd>{cursor && showTerrain ? meters(cursor.height) : "—"}</dd></div>
         <div><dt title="Ground distance represented by one screen pixel at the cursor">Res</dt><dd>{cursor ? `${cursor.resolution.toFixed(2)} m/px` : "—"}</dd></div>
         <div><dt>Dist to cursor</dt><dd>{cursor ? meters(cursor.distance) : "—"}</dd></div>
       </dl>
       <a href={LUNAR_MAP_SOURCE} target="_blank" rel="noreferrer">QuickMap · LROC</a>
       <button type="button" className="lunar-measurement-help" aria-label="Measurement details" aria-expanded={measurementHelp} onClick={() => setMeasurementHelp(value => !value)}><Info size={14}/></button>
-      {measurementHelp && <div className="lunar-measurement-note">Tap the ground to pin a point. Height uses the Moon's reference level. Res shows metres per screen pixel; distance is measured from the camera to your point.</div>}
+      {measurementHelp && <div className="lunar-measurement-note">Horizon coordinates start at the selected site. Tap the ground to pin a point. Height uses the Moon's reference level. Res shows metres per screen pixel; distance is measured from the camera to your point.</div>}
     </div>
-    {(state.view === "surface" || state.view === "horizon") && <div className="lunar-view-mode">
+    {(state.view === "surface" || state.view === "horizon") && <div className={`lunar-view-mode${state.view === "horizon" ? " horizon-mode-switch" : ""}`}>
       <span>{state.view === "surface" ? "Terrain flyover" : "Observer horizon"}</span>
-      <button type="button" onClick={() => { const s=useScout.getState();s.set({view:s.view === "surface" ? "horizon" : "surface",focusVersion:s.focusVersion+1}); }}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
+      <button type="button" className="desktop-map-switch" onClick={() => { const s=useScout.getState();s.set({view:s.view === "surface" ? "horizon" : "surface",focusVersion:s.focusVersion+1}); }}>{state.view === "surface" ? "Observer horizon" : "Terrain flyover"}</button>
       {state.view === "surface" && <button type="button" aria-pressed={closeUp} onClick={() => setCloseUp(value => !value)}>{closeUp ? "Wide view" : "Close-up · 60 m"}</button>}
     </div>}
   </>;

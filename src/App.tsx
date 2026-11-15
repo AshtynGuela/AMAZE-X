@@ -84,6 +84,12 @@ const DateSlip = lazy(() => import("./DateSlip"));
 const loadScenarioDialog = () => import("./LandingPlanner");
 const ScenarioDialog = lazy(loadScenarioDialog);
 const NearbySites = lazy(() => import("./NearbySites"));
+const orbitViews = [
+  ["earth_moon_orbit", "Earth–Moon orbit"],
+  ["solar_orbit", "Sun–Earth orbit"],
+  ["earth", "Earth"],
+  ["sun", "Sun"],
+] as const;
 class SceneBoundary extends Component<any, { error: string }> {
   state = { error: "" };
   static getDerivedStateFromError(error) {
@@ -1019,8 +1025,8 @@ export default function App() {
                 clock. No-data remains transparent; use the inspector for
                 date-specific values.
               </p>
-              <h3>Polar views</h3>
-              <div className="button-row">
+              <h3 className="desktop-map-switch">Polar views</h3>
+              <div className="button-row desktop-map-switch">
                 <button onClick={() => state.set({ view: "polar_south" })}>
                   South pole
                 </button>
@@ -1084,7 +1090,7 @@ export default function App() {
               </p>
               <button className="full-width" onClick={() => state.set({ welcome: true })}>Replay Welcome</button>
               <details className="site-extra-controls"><summary>Navigation and help</summary>
-                <label>Explore view<select aria-label="Explore view" value={state.view} onChange={event => state.set({ view: event.target.value as any })}>
+                <label className="desktop-map-switch">Explore view<select aria-label="Explore view" value={state.view} onChange={event => state.set({ view: event.target.value as any })}>
                   <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option>
                   <option value="globe">Moon</option><option value="polar_south">South pole</option><option value="polar_north">North pole</option>
                   <option value="surface">Terrain flyover</option><option value="horizon">Horizon</option>
@@ -1100,9 +1106,26 @@ export default function App() {
       )}
       </Presence>
       <div className="phone-only phone-map-controls" aria-label="Phone map controls">
-        <label><span>View</span><select aria-label="Map view" value={state.view} onChange={event=>{state.set({view:event.target.value as typeof state.view,rail:null});setPhoneDetails(false);}}>
+        <label><span>View</span><select aria-label="Map view"
+          value={((state.view === "overview" || state.view === "globe") &&
+            orbitViews.find(([mode]) => mode === state.cameraCommand?.mode)?.[0]) || state.view}
+          onChange={event => {
+            const value = event.target.value;
+            const orbit = orbitViews.find(([mode]) => mode === value);
+            state.set({
+              view: orbit ? (state.view === "overview" ? "overview" : "globe") : value as typeof state.view,
+              cameraCommand: orbit ? { mode: orbit[0], version: (state.cameraCommand?.version ?? 0) + 1 } : null,
+              focusVersion: state.focusVersion + (orbit ? 0 : 1),
+              rail: null,
+              ...(value === "solar_system" ? { compare: false } : {}),
+            });
+            setPhoneDetails(false);
+          }}>
           <option value="solar_system">Solar System</option><option value="overview">Earth–Moon</option><option value="globe">Moon</option>
           <option value="polar_south">South pole</option><option value="polar_north">North pole</option><option value="surface">Terrain flyover</option><option value="horizon">Horizon</option>
+          <optgroup label="Orbits and bodies">
+            {orbitViews.map(([mode, label]) => <option key={mode} value={mode}>{label}</option>)}
+          </optgroup>
         </select></label>
         <button aria-expanded={phoneDetails && inspector} onClick={()=>{setInspector(true);setPhoneDetails(value=>!value);state.set({rail:null,compare:false,timeline:false});}}>
           {phoneDetails && inspector ? "Close details" : solar ? "Body details" : "Site details"}
