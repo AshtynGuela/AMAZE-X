@@ -74,7 +74,6 @@ async function readTerrain(url: string) {
 
 export function ensureTerrain(site: Site, force = false) {
   const cached = useScout.getState().terrains[site.id];
-  if (cached && !force) return Promise.resolve(cached);
   const pending = terrainRequests.get(site.id);
   if (pending) return pending;
   const url = site.family === "custom"
@@ -84,9 +83,8 @@ export function ensureTerrain(site: Site, force = false) {
   const initialQuality = custom && force && cached ? cached.quality ?? "full" : "preview";
   const commit = (terrain: Terrain) => useScout.setState(s => terrainCanReplace(s.terrains[site.id],terrain)
     ? {terrains:{...s.terrains,[site.id]:{...terrain,siteId:site.id}}}:s);
-  const request = readTerrain(url + (custom ? "&quality="+initialQuality + (force ? "&retry=1" : "") : "")).then((terrain: Terrain) => {
-    commit(terrain);
-    if (custom && !terrainRefinements.has(site.id)) {
+  const refine = (terrain: Terrain) => {
+    if (custom && terrainRank(terrain) < terrainRank({quality:"full"}) && !terrainRefinements.has(site.id)) {
       const refinement = (async()=>{
         for(const quality of ["quick","full"]){
           if(terrainRank({quality})<=terrainRank(terrain))continue;
@@ -97,6 +95,14 @@ export function ensureTerrain(site: Site, force = false) {
         .finally(() => terrainRefinements.delete(site.id));
       terrainRefinements.set(site.id, refinement);
     }
+  };
+  if (cached && !force) {
+    refine(cached);
+    return Promise.resolve(cached);
+  }
+  const request = readTerrain(url + (custom ? "&quality="+initialQuality + (force ? "&retry=1" : "") : "")).then((terrain: Terrain) => {
+    commit(terrain);
+    refine(terrain);
     return terrain;
   }).catch(() => null).finally(() => terrainRequests.delete(site.id));
   terrainRequests.set(site.id, request);

@@ -11,6 +11,26 @@ const run = promisify(execFile);
 const root = fileURLToPath(new URL("../", import.meta.url));
 const jobs = new Map();
 const recent = new Map();
+const previews = new Map();
+const previewKey = (lat, lon) => JSON.stringify([lat, lon === 180 ? -180 : lon]);
+
+export async function previewTerrainBatch(points, signal) {
+  return runTerrainWork(async () => {
+    signal.throwIfAborted();
+    const keys = points.map(({ lat, lon }) => previewKey(lat, lon));
+    const missing = [...new Set(keys.filter(key => !previews.has(key)))];
+    if (missing.length) {
+      const { stdout } = await run(process.env.LUNAR_TERRAIN_PYTHON || "python",
+        [path.join(root, "scripts/lunar_terrain.py"), "--preview-batch", "[" + missing.join(",") + "]"],
+        { cwd: root, windowsHide: true, timeout: 8000, maxBuffer: 2 * 1024 * 1024, signal });
+      const terrains = JSON.parse(stdout);
+      missing.forEach((key, index) => previews.set(key, terrains[index]));
+    }
+    const result = keys.map(key => previews.get(key));
+    while (previews.size > 96) previews.delete(previews.keys().next().value);
+    return result;
+  }, { priority: 5 });
+}
 const rawGlobal = path.join(root, "data/raw/ldem_128.img");
 const revision = createHash('sha256').update(await fs.readFile(path.join(root,'public/data/manifest.json')))
   .update(await fs.readFile(path.join(root,'data/terrain-regional.json')))
@@ -27,6 +47,8 @@ export async function coordinateTerrainReady() {
 }
 
 export async function terrainAt(lat, lon, retry = false, quality = "full") {
+  const preview = quality === "preview" && previews.get(previewKey(lat, lon));
+  if (preview && !retry) return preview;
   // +/-180 are the same meridian. Retain the longitude at the exact poles
   // because it defines the convention for local north and east.
   const key = JSON.stringify([lat, lon === 180 ? -180 : lon, quality]);

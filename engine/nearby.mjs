@@ -3,6 +3,52 @@ import { siteScore } from "./site-score.mjs";
 
 const RAD = Math.PI / 180;
 const MOON_KM = 1737.4;
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+function observerFrame({ lat, lon }, heightM) {
+  const p = lat * RAD, l = lon * RAD;
+  const up = [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)];
+  return {
+    up,
+    east: [-Math.sin(l), Math.cos(l), 0],
+    north: [-Math.sin(p) * Math.cos(l), -Math.sin(p) * Math.sin(l), Math.cos(p)],
+    position: up.map(axis => axis * (MOON_KM + heightM / 1000)),
+  };
+}
+
+// Nearby screening translates the apparent JPL vector in the lunar ME frame.
+// It includes site-to-site parallax but uses the reference apparent epoch.
+export function nearbySky(packet, point, elevationM, mast, start, duration) {
+  const observer = packet.observer;
+  const source = observerFrame(observer, observer.elevationM + observer.mastM);
+  const target = observerFrame(point, elevationM + mast);
+  const offset = source.position.map((axis, i) => axis - target.position[i]);
+  const end = start + duration * DAY;
+  const project = rows => {
+    const first = rows.findIndex(row => row[0] >= start);
+    const last = rows.findIndex(row => row[0] >= end);
+    if (first < 0 || last < 0 || rows[0][0] > start) return [];
+    return rows.slice(Math.max(0, first - 1), last + 1).map(([time, az, el, diameter, range]) => {
+      const azR = az * RAD, elR = el * RAD;
+      const east = Math.sin(azR) * Math.cos(elR);
+      const north = Math.cos(azR) * Math.cos(elR);
+      const up = Math.sin(elR);
+      const vector = offset.map((axis, i) => axis +
+        range * (east * source.east[i] + north * source.north[i] + up * source.up[i]));
+      const nextEast = dot(vector, target.east), nextNorth = dot(vector, target.north);
+      const nextUp = dot(vector, target.up), distance = Math.hypot(...vector);
+      const radius = Math.asin(Math.min(1, Math.sin(diameter * RAD / 7200) * range / distance));
+      return [
+        time,
+        (Math.atan2(nextEast, nextNorth) / RAD + 360) % 360,
+        Math.atan2(nextUp, Math.hypot(nextEast, nextNorth)) / RAD,
+        radius * 7200 / RAD,
+        distance,
+      ];
+    });
+  };
+  return { sun: project(packet.sun), earth: project(packet.earth) };
+}
 
 export function lunarDistanceKm(a, b) {
   const dLat = (b.lat - a.lat) * RAD, dLon = (b.lon - a.lon) * RAD;
@@ -35,7 +81,7 @@ export function nearbyPoints(center, radius, sites) {
 }
 
 export function nearbyMetrics(data, start, duration, mask, antenna, profile) {
-  if (!mask || !data.earth?.length || start < data.earth[0][0] ||
+  if (!mask || !data.sun?.length || !data.earth?.length || start < data.earth[0][0] ||
       start + duration * DAY > data.earth.at(-1)[0]) return null;
   const m = summarize(data, start, duration, mask, antenna, 0, []);
   const evaluation = siteScore(m, duration);

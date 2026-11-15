@@ -1,7 +1,8 @@
 /* Figma 1:3. The lunar workspace shares the existing data and map controls. */
 .app.lunar-ui {
   --site-header: 56px;
-  --site-inspector: 281px;
+  --site-inspector-default: 281px;
+  --site-inspector: clamp(244px, var(--inspector-user-width, var(--site-inspector-default)), min(640px, 56vw));
   --site-rail: 82px;
   --panel: #171717e0;
   --raised: #292929;
@@ -110,7 +111,7 @@
 .app.lunar-ui .inspector-section { padding: 18px 0; border: 0; border-bottom: 1px solid transparent; border-image: url('/assets/site-ui/inspector-rule.svg') 1 stretch; }
 .app.lunar-ui .inspector-section:has(.condition-readings) { padding-top: 9px; }
 .app.lunar-ui .inspector-section:has(.condition-readings) > .section-heading { display: none; }
-.app.lunar-ui .sky-strip { display: block; width: 225px; max-width: 100%; margin: 0 auto 25px; background: #ffffff04; filter: drop-shadow(0 10px 30px #4b72da1a); }
+.app.lunar-ui .sky-strip { display: block; width: 100%; height: auto; margin: 0 auto 25px; background: #ffffff04; filter: drop-shadow(0 10px 30px #4b72da1a); }
 .app.lunar-ui .sky-strip > polyline { stroke: #629bff; stroke-width: 1.8; filter: drop-shadow(0 0 4px #538fff70); }
 .app.lunar-ui .sky-strip > polygon { fill: #aac4f710; }
 .app.lunar-ui .sky-strip text { font: 9px 'D-DIN Expanded',sans-serif; fill: #bbb; }
@@ -198,7 +199,7 @@
 }
 
 @media (max-width: 1150px) and (min-width: 761px) {
-  .app.lunar-ui { --site-inspector: 270px; --site-rail: 66px; }
+  .app.lunar-ui { --site-inspector-default: 270px; --site-rail: 66px; }
   .app.lunar-ui .instrument-rail > button { width: 66px; }
   .app.lunar-ui .site-rail-icon { transform: scale(.82); }
   .app.lunar-ui .flyout { left: 66px; width: 224px; }
@@ -430,6 +431,34 @@
   gap: 8px;
   margin: 12px 0;
 }
+.inspector-resize-edge {
+  position: absolute;
+  top: calc(var(--site-header) + 3px);
+  bottom: 0;
+  right: calc(var(--site-inspector) - 4px);
+  width: 8px;
+  z-index: 39;
+  cursor: ew-resize;
+}
+.app[data-resizing-inspector] { cursor: ew-resize; user-select: none; }
+.app.lunar-ui .site-evaluation-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 9px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  background: #253235;
+  border: 1px solid #5e777b;
+}
+.site-evaluation-summary > span { display: grid; gap: 3px; min-width: 0; }
+.site-evaluation-summary > span:last-child { text-align: right; }
+.site-evaluation-summary time { font-size: 14px; font-weight: 700; color: #e0f4ee; }
+.site-evaluation-summary strong { font-size: 21px; color: #b9e5d7; }
+.site-evaluation-summary small { font-size: 11px; color: #e1ebe8; }
 .site-quick-actions > button {
   justify-content: flex-start;
   text-align: left;

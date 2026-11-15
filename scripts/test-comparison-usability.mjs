@@ -93,16 +93,25 @@ try {
   await noHorizontalOverflow();
   await save("phone-nearby");
   const startNearby = async () => {
-    const outgoing = page.waitForRequest(request => request.url().includes("/api/terrain?") && request.url().includes("quality=full"));
+    const outgoing = page.waitForRequest(request => request.url().includes("/api/terrain/nearby-preview"));
     await nearby.getByRole("button", { name: "Rank nearby sites" }).tap();
     await outgoing;
     await expect(nearby.getByRole("status")).toContainText("Checked");
   };
   await startNearby();
   const nearbyResult = nearby.locator(".nearby-results li").first();
-  await expect(nearbyResult).toContainText("Meets mission limits", { timeout: 180000 });
+  await expect(nearbyResult).toContainText("Likely meets mission limits", { timeout: 27000 });
   await expect(nearbyResult).toContainText("Earth contact");
+  await expect(nearby.getByRole("button", { name: "Rank nearby sites" })).toBeEnabled();
+  let releasePreview;
+  const stalled = new Promise(resolve => { releasePreview = resolve; });
+  await page.route("**/api/terrain/nearby-preview", async route => {
+    await stalled;
+    await route.abort().catch(() => {});
+  }, { times: 1 });
+  await startNearby();
   await nearby.getByRole("button", { name: "Cancel search" }).tap();
+  releasePreview();
   await expect(nearby.getByRole("button", { name: "Rank nearby sites" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(nearby).toHaveCount(0);
@@ -111,11 +120,11 @@ try {
   await openNearby.tap();
   await nearby.getByLabel("Search radius (km)").fill("4");
   await startNearby();
-  await nearbyResult.getByRole("button", { name: "Compare", exact: true }).tap({ timeout: 180000 });
+  await nearbyResult.getByRole("button", { name: "Compare", exact: true }).tap({ timeout: 27000 });
   await expect(nearby).toHaveCount(0);
   await expect(matrix.getByRole("columnheader").last()).toContainText("Nearby");
   await expect(matrix.getByRole("row", { name: /^Horizon model/ }).getByRole("cell").last())
-    .toHaveText("Detailed terrain", { timeout: 120000 });
+    .toHaveText(/Terrain preview|Detailed terrain/, { timeout: 45000 });
   await compare.getByRole("button", { name: /Nearby ·/ }).tap();
   await expect(inspector.getByRole("heading", { name: /Nearby ·/ })).toBeVisible();
   await page.getByRole("button", { name: "Close details", exact: true }).tap();
@@ -132,7 +141,7 @@ try {
     testedUtc: new Date().toISOString(), base, realApi: true,
     phoneWidths: [320, 390], landscapeViewport: [844, 390], emulatedTouch: true,
     startedWithNoPlans: true, twoSiteComparisonSeconds: comparisonSeconds, takeaway,
-    alternateDateAdded: true, nearbyFiltersMatchingResultAndCancellation: true, nearbyDetailedPlan: true,
+    alternateDateAdded: true, nearbyFiltersMatchingResultAndCancellation: true, nearbyPlanCreated: true,
     keyboardComparisonFocus: true, physicalPhoneTested: false, errors,
   };
   await fs.writeFile(resultDir + "/result.json", JSON.stringify(result, null, 2));

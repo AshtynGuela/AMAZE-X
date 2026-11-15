@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { compareNearby, lunarDistanceKm, nearbyMetrics, nearbyPoints } from "../engine/nearby.mjs";
+import { compareNearby, lunarDistanceKm, nearbyMetrics, nearbyPoints, nearbySky } from "../engine/nearby.mjs";
 import { DAY } from "../engine/index.mjs";
 
 test("sampling stays within the requested radius at the poles and across longitude wrap", () => {
@@ -14,6 +14,20 @@ test("sampling stays within the requested radius at the poles and across longitu
   }
   const center = { id: "start", lat: 0, lon: 179.99 };
   assert.equal(nearbyPoints(center, 2, [center, { id: "wrapped", lat: 0, lon: -179.99 }])[0].id, "wrapped");
+});
+
+test("nearby screening reprojects JPL observations with observer displacement", () => {
+  const body = [[0, 0, 90, 1800, 380000], [DAY, 0, 90, 1800, 380000]];
+  const packet = { sun: body, earth: body, observer: { lat: 0, lon: 0, elevationM: 0, mastM: 0 } };
+  const offset = nearbySky(packet, { lat: 0, lon: 1 }, 0, 0, 0, 1).earth[0];
+  const rad = Math.PI / 180;
+  const targetDistanceFromMoonCenter = 380000 + 1737.4;
+  const expectedEl = Math.atan2(targetDistanceFromMoonCenter * Math.cos(rad) - 1737.4,
+    targetDistanceFromMoonCenter * Math.sin(rad)) / rad;
+  assert.ok(Math.abs(offset[1] - 270) < 1e-9);
+  assert.ok(Math.abs(offset[2] - expectedEl) < 1e-9);
+  assert.ok(offset[4] > 380000);
+  assert.deepEqual(nearbySky(packet, { lat: 0, lon: 1 }, 0, 0, DAY, 1).earth, []);
 });
 
 test("ranking puts candidates meeting limits first and needs actual horizon and sky coverage", () => {

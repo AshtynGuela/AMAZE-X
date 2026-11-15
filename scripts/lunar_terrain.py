@@ -171,11 +171,11 @@ def elevation_sampler(lat, source_records=None, detailed=True):
     return elevation, used, products
 
 
-def terrain_at(lat, lon, source_records=None, quality="full"):
+def terrain_at(lat, lon, source_records=None, quality="full", sampler=None):
     started = time.monotonic()
     # First paint uses only the global NASA raster. Reading every 20 m polar
     # ridge belongs to refinement, not the first useful coordinate result.
-    elevation, used, products = elevation_sampler(lat, source_records, detailed=quality != "preview")
+    elevation, used, products = sampler or elevation_sampler(lat, source_records, detailed=quality != "preview")
     height = round(float(elevation(lat, lon)), 3)
     resolution = min(products[p]["mapScaleM"] for p in used)
     distances = np.r_[np.arange(5, 500, 5), DISTANCES] if resolution < 20 else DISTANCES
@@ -243,5 +243,12 @@ def terrain_at(lat, lon, source_records=None, quality="full"):
 
 if __name__ == "__main__":
     import sys
-    print(json.dumps(terrain_at(float(sys.argv[1]), float(sys.argv[2]), quality=sys.argv[3] if len(sys.argv) > 3 else "full"),
-                     separators=(",", ":"), allow_nan=False))
+    if sys.argv[1] == "--preview-batch":
+        if not (ROOT / "data/terrain/preview.json").is_file():
+            raise ValueError("Bundled LOLA terrain preview is unavailable")
+        sampler = elevation_sampler(0, detailed=False)
+        result = [terrain_at(lat, lon, quality="preview", sampler=sampler)
+                  for lat, lon in json.loads(sys.argv[2])]
+    else:
+        result = terrain_at(float(sys.argv[1]), float(sys.argv[2]), quality=sys.argv[3] if len(sys.argv) > 3 else "full")
+    print(json.dumps(result, separators=(",", ":"), allow_nan=False))

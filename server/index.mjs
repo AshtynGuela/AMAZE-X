@@ -10,7 +10,7 @@ import { z } from "zod";
 import { ephemeris } from "./horizons.mjs";
 import { answerQuestion } from "./assistant.mjs";
 import { solarPacket } from "./solar.mjs";
-import { coordinateTerrainReady, surfaceTopography, terrainAt } from "./terrain.mjs";
+import { coordinateTerrainReady, previewTerrainBatch, surfaceTopography, terrainAt } from "./terrain.mjs";
 import { surfaceImagery } from "./surface-imagery.mjs";
 import { lunarTerrainLayer } from "../engine/lunar-map.mjs";
 import { numericPatch } from "./terrain-tiles.mjs";
@@ -118,6 +118,32 @@ app.get("/api/solar/:id", async (req, res, next) => {
     res.set("Cache-Control", "public, max-age=3600, must-revalidate").json(packet);
   } catch (e) {
     next(e);
+  }
+});
+const nearbyPreviewRequest = z.object({
+  points: z.array(z.object({
+    lat: z.number().min(-90).max(90),
+    lon: z.number().min(-180).max(180),
+    id: z.string().max(80).optional(),
+  })).min(1).max(10),
+});
+app.post("/api/terrain/nearby-preview", async (req, res, next) => {
+  const closed = new AbortController();
+  res.once("close", () => closed.abort());
+  const signal = AbortSignal.any([closed.signal, AbortSignal.timeout(10000)]);
+  try {
+    const { points } = nearbyPreviewRequest.parse(req.body);
+    const terrain = await Promise.all(points.map(point => {
+      const site = sites.find(site => site.id === point.id &&
+        site.lat === point.lat && site.lon === point.lon);
+      return site ? loadTerrain(site.id) : null;
+    }));
+    const missing = points.filter((_, index) => !terrain[index]);
+    const previews = missing.length ? await previewTerrainBatch(missing, signal) : [];
+    let index = 0;
+    res.json({ terrain: terrain.map(value => value ?? previews[index++]) });
+  } catch (error) {
+    if (!closed.signal.aborted) next(error);
   }
 });
 app.get("/api/terrain", async (req, res, next) => {

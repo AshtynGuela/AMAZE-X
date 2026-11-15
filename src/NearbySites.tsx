@@ -4,7 +4,7 @@ import { DAY } from "../engine/index.mjs";
 import { hoursAndMinutes, missionHours } from "../engine/comparison.mjs";
 import { formatSiteScore } from "../engine/site-score.mjs";
 import { compareNearby, nearbyPoints } from "../engine/nearby.mjs";
-import { jsonFetch, type Scenario, type Site, type Terrain } from "./store";
+import { getMask, jsonFetch, packetFor, packetKey, useScout, type Packet, type Scenario, type Site, type Terrain } from "./store";
 
 export type NearbyPoint = {
   id?: string; name: string; lat: number; lon: number; distanceKm: number;
@@ -17,7 +17,6 @@ export type NearbyMission = {
   time: number; duration: number; mast: number; antenna: number; profile?: Scenario["profile"];
 };
 type Search = { points: NearbyPoint[]; mission: NearbyMission; matchingOnly: boolean };
-type Evaluation = Pick<RankedSite, "sunlight" | "contact" | "darkness" | "meetsLimits" | "score">;
 
 export default function NearbySites({ center, sites, mission, close, showMap, compare, initial }: {
   center: NearbyPoint; sites: Site[]; mission: NearbyMission; close: () => void;
@@ -47,65 +46,73 @@ export default function NearbySites({ center, sites, mission, close, showMap, co
     const { time, duration, mast, antenna, profile } = search.mission;
     const { points } = search;
     const controller = new AbortController(), { signal } = controller;
-    const worker = new Worker(new URL("./metrics.worker.ts", import.meta.url), { type: "module" });
-    const results = new Map<number, (result: Evaluation | null) => void>();
-    worker.onmessage = ({ data }) => {
-      results.get(data.id)?.(data.nearby ?? null);
-      results.delete(data.id);
-    };
-    worker.onerror = () => {
-      for (const complete of results.values()) complete(null);
-      results.clear();
+    let worker: Worker | undefined;
+    const stop = (message: string) => {
+      if (signal.aborted) return;
+      setError(message);
       controller.abort();
-      setError("The calculation stopped. Start the search again.");
+      worker?.terminate();
     };
-    let next = 0;
-    const checkPoint = async () => {
-      while (next < points.length && !signal.aborted) {
-        const id = next++, point = points[id];
-        const coords = new URLSearchParams({ lat: String(point.lat), lon: String(point.lon) });
-        try {
-          const terrainUrl = point.id && !point.id.startsWith("custom-")
-            ? "/api/terrain/" + encodeURIComponent(point.id) : "/api/terrain?" + coords + "&quality=full";
-          let terrain;
-          const deadline = Date.now() + 660000;
-          do {
-            terrain = await jsonFetch(terrainUrl, { signal });
-            if (!terrain.pending) break;
-            await new Promise(resolve => setTimeout(resolve, 1800));
-          } while (!signal.aborted && Date.now() < deadline);
-          if (signal.aborted) return;
-          const mask = terrain.masks?.[String(mast)];
-          if (!mask || (terrain.quality && terrain.quality !== "full")) throw Error("Detailed terrain unavailable");
-          const start = Math.floor(time / DAY) * DAY;
-          const query = new URLSearchParams(coords);
-          query.set("mast", String(mast));
-          query.set("start", new Date(start).toISOString());
-          query.set("days", String(Math.ceil((time + duration * DAY - start) / DAY)));
-          query.set("siteId", point.id || "custom-0");
-          const data = await jsonFetch("/api/ephemeris?" + query, { signal });
-          if (!data.observer.terrainApplied || data.observer.elevationM !== terrain.elevationM)
-            throw Error("Observer height unavailable");
-          const result = await new Promise<Evaluation | null>(resolve => {
-            results.set(id, resolve);
-            worker.postMessage({ id, kind: "nearby", data, start: time, duration, mask, minAntennaEl: antenna, profile });
-          });
-          if (!result) throw Error("Mission coverage unavailable");
-          if (!signal.aborted) setRows(current => [...current, { ...point, ...result, terrain }].sort(compareNearby));
-        } catch {
-          if (!signal.aborted) setFailed(count => count + 1);
-        } finally {
-          if (!signal.aborted) setCompleted(count => count + 1);
+    const deadline = window.setTimeout(
+      () => stop("The search reached its 25-second limit. Any results shown are from the points already checked. Try again to reuse any sky data that finished loading."),
+      25000,
+    );
+
+    const evaluate = async () => {
+      const state = useScout.getState();
+      const cached = center.id && state.mastM === mast ? packetFor(state, center.id, time, duration) : undefined;
+      const midnight = Math.floor(time / DAY) * DAY;
+      const days = center.id && state.loading[packetKey(center.id, mast)]
+        ? Math.max(33, Math.ceil(duration) + 2)
+        : Math.ceil((time - midnight) / DAY + duration);
+      const query = new URLSearchParams({
+        lat: String(center.lat), lon: String(center.lon), mast: String(mast),
+        start: new Date(midnight).toISOString(), days: String(days),
+        terrainQuality: "preview",
+      });
+      if (center.id) query.set("siteId", center.id);
+      const [packet, batch]: [Packet, { terrain: Terrain[] }] = await Promise.all([
+        cached ?? jsonFetch("/api/ephemeris?" + query, { signal }),
+        jsonFetch("/api/terrain/nearby-preview", {
+          method: "POST", headers: { "Content-Type": "application/json" }, signal,
+          body: JSON.stringify({ points: points.map(({ id, lat, lon }) => ({ id, lat, lon })) }),
+        }),
+      ]);
+      if (signal.aborted) return;
+      if (batch.terrain.length !== points.length) throw Error("Incomplete terrain preview");
+      worker = new Worker(new URL("./metrics.worker.ts", import.meta.url), { type: "module" });
+      worker.onerror = () => stop("The calculation stopped. Start the search again.");
+      worker.onmessage = ({ data }) => {
+        if (signal.aborted) return;
+        if (data.error) return stop("The calculation stopped. Start the search again.");
+        if (data.done) {
+          window.clearTimeout(deadline);
+          worker?.terminate();
+          return;
         }
-      }
+        const index = data.index;
+        if (data.nearby) {
+          const row: RankedSite = { ...points[index], ...data.nearby, terrain: batch.terrain[index] };
+          setRows(current => [...current, row].sort(compareNearby));
+        } else {
+          setFailed(count => count + 1);
+        }
+        setCompleted(count => count + 1);
+      };
+      worker.postMessage({
+        kind: "nearby-preview", data: packet, start: time, duration, mast, minAntennaEl: antenna, profile,
+        candidates: points.map((point, index) => ({
+          point, elevationM: batch.terrain[index].elevationM, mask: getMask(batch.terrain[index], mast),
+        })),
+      });
     };
-    void Promise.all([checkPoint(), checkPoint()]);
+    void evaluate().catch(() => stop("Could not load the terrain preview or JPL sky data. Rank nearby sites again to retry."));
     return () => {
+      window.clearTimeout(deadline);
       controller.abort();
-      worker.terminate();
-      for (const complete of results.values()) complete(null);
+      worker?.terminate();
     };
-  }, [search]);
+  }, [search, center]);
   const running = !!search && total > completed && !error;
   useEffect(() => {
     if (running) cancelButton.current?.focus({ preventScroll: true });
@@ -171,7 +178,7 @@ export default function NearbySites({ center, sites, mission, close, showMap, co
         <label className="nearby-filter"><input type="checkbox" checked={matchingOnly && hasFilters} disabled={!hasFilters} onChange={e => setMatchingOnly(e.target.checked)} /> Only show sites that meet the limits</label>
       </fieldset>
       </fieldset>
-      <p className="data-note">Checks eight sampled points and up to two named sites. Uses your {mission.mast} m mast and {mission.antenna}° minimum antenna angle. Sites that meet all limits rank first, followed by site score.</p>
+      <p className="data-note">Checks eight sampled points and up to two named sites. Uses your {mission.mast} m mast and {mission.antenna}° minimum antenna angle. The search uses a coarse LOLA horizon and shared JPL sky data. Estimated matches rank first, followed by site score.</p>
       <div className="comparison-actions">
         <button className="primary" ref={rankButton} type="submit" disabled={running}>Rank nearby sites</button>
         {running && <button type="button" ref={cancelButton} onClick={() => {
@@ -183,19 +190,20 @@ export default function NearbySites({ center, sites, mission, close, showMap, co
       </form>
       {search && <p role="status" className="data-note">
         Checked {completed} of {total}{failed > 0 ? ` · ${failed} without complete data` : ""}
-        {running ? " · Each new point can take a few minutes. Results appear as they finish." : ""}
+        {running ? " · Loading terrain previews and JPL sky data…" : ""}
       </p>}
       {error && <p role="alert" className="error-text">{error}</p>}
-      {search && !running && !error && !rows.length && <p>No sites returned complete terrain and sky data.</p>}
-      {search && !running && rows.length > 0 && !visibleRows.length && <p>No checked sites meet all your limits.</p>}
+      {search && !running && !error && !rows.length && <p>No points returned enough terrain and sky data to rank.</p>}
+      {search && !running && rows.length > 0 && !visibleRows.length && <p>No checked sites matched all limits in the preview.</p>}
       {search && visibleRows.length > 0 && <>
+        <p className="data-note">Choose Compare to calculate a site’s own sky positions and refine its terrain.</p>
         <p className="data-note">Results for {new Date(search.mission.time).toISOString().slice(0, 16).replace("T", " ")} UTC · {search.mission.duration} Earth days</p>
         <ol className="nearby-results">
           {visibleRows.map((row, index) => <li key={row.id || row.name}>
             <div><strong>{index + 1}. {row.name}</strong> · {row.distanceKm.toFixed(1)} km
-              <p><strong>{formatSiteScore(row.score)} site score</strong></p>
+              <p><strong>{formatSiteScore(row.score)} preliminary site score</strong></p>
               <p className="data-note">{hoursAndMinutes(missionHours(row.sunlight, search.mission.duration))} sunlight · {hoursAndMinutes(missionHours(row.contact, search.mission.duration))} Earth contact · {hoursAndMinutes(row.darkness)} longest darkness</p>
-              {row.meetsLimits !== null && <small>{row.meetsLimits ? "Meets mission limits" : "Misses one or more limits"}</small>}
+              {row.meetsLimits !== null && <small>{row.meetsLimits ? "Likely meets mission limits" : "Likely misses a mission limit"}</small>}
             </div>
             <button onClick={() => compare(row, search.mission)}>Compare</button>
           </li>)}

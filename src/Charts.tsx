@@ -115,9 +115,9 @@ export function SkyStrip({
     ),
     y = (a: number) => 110 - ((a - low) / (high - low)) * 90,
     x = (a: number) => 20 + (a / 360) * 320;
-  const points = (mask || new Array(720).fill(c.sun.horizon))
-    .filter((_, i) => i % 4 === 0)
-    .map((v, i) => `${x(i * 2)},${y(v)}`)
+  const horizon = mask?.length ? mask : [c.sun.horizon];
+  const points = [...horizon, horizon[0]]
+    .map((v, i) => `${x(i * 360 / horizon.length)},${y(v)}`)
     .join(" ");
   return (
     <svg

@@ -5,7 +5,7 @@ import {
   sweepDates,
 } from "../engine/index.mjs";
 import { landingWindows } from "../engine/landing.mjs";
-import { nearbyMetrics } from "../engine/nearby.mjs";
+import { nearbyMetrics, nearbySky } from "../engine/nearby.mjs";
 self.onmessage = (event) => {
   const {
     id,
@@ -21,8 +21,13 @@ self.onmessage = (event) => {
     arrayAzimuth,
   } = event.data;
   try {
-    if (kind === "nearby") {
-      self.postMessage({ id, nearby: nearbyMetrics(data, start, duration, mask, minAntennaEl, profile) });
+    if (kind === "nearby-preview") {
+      const { candidates, mast } = event.data;
+      candidates.forEach(({ point, elevationM, mask }, index) => {
+        const sky = nearbySky(data, point, elevationM, mast, start, duration);
+        self.postMessage({ index, nearby: nearbyMetrics(sky, start, duration, mask, minAntennaEl, profile) });
+      });
+      self.postMessage({ done: true });
       return;
     }
     if (kind === "landing") {

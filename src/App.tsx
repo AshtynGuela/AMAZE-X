@@ -65,6 +65,8 @@ import {
 } from "./Charts";
 import { APP_NAME } from "../engine/app-actions.mjs";
 import { formatSiteScore, siteScore } from "../engine/site-score.mjs";
+import { terrainCanReplace } from "../engine/terrain-quality.mjs";
+import InspectorResizeEdge from "./InspectorResizeEdge";
 import Welcome from "./Welcome";
 import { SiteAsset, SiteBackdrop, SiteWordmark } from "./SiteChrome";
 import "./site-ui.css";
@@ -84,7 +86,8 @@ const Rocky = lazy(() => import("./Rocky"));
 const DateSlip = lazy(() => import("./DateSlip"));
 const loadScenarioDialog = () => import("./LandingPlanner");
 const ScenarioDialog = lazy(loadScenarioDialog);
-const NearbySites = lazy(() => import("./NearbySites"));
+const loadNearbySites = () => import("./NearbySites");
+const NearbySites = lazy(loadNearbySites);
 const SiteAnalysis = lazy(() => import("./SiteAnalysis"));
 const orbitViews = [
   ["earth_moon_orbit", "Earth–Moon orbit"],
@@ -202,21 +205,25 @@ export default function App() {
   useEffect(() => {
     if (state.compare && useScout.getState().rail) useScout.getState().set({ rail: null });
   }, [state.compare]);
+  const scoreStep = state.playing ? HOUR : 60000;
+  const scoreTime = Math.floor(state.time / scoreStep) * scoreStep;
   const activeScenario = selectedScenario(state),
     probe = useMemo(
       () => ({
         id: "probe",
         siteId: state.selected,
-        epoch: new Date(Math.floor(state.time / DAY) * DAY).toISOString(),
+        epoch: new Date(scoreTime).toISOString(),
         durationDays: 1,
       }),
-      [state.selected, Math.floor(state.time / DAY)],
+      [state.selected, scoreTime],
     ),
     analysis = useMetrics(solar && !packet ? undefined : activeScenario || probe),
     probeAnalysis = useMetrics((!solar || !!packet) && activeScenario && (inspector || state.rail === "clock") ? probe : undefined),
     eventAnalysis = activeScenario ? probeAnalysis : analysis,
     m = analysis?.metrics;
-  const missionScore = activeScenario && siteScore(m, activeScenario.durationDays);
+  const scoringPlan = activeScenario ?? probe;
+  const scoredDate = scoringPlan.epoch === "live" ? new Date(Math.floor(state.time / HOUR) * HOUR).toISOString() : scoringPlan.epoch;
+  const missionScore = siteScore(m, scoringPlan.durationDays);
   function openSiteAnalysis(target: Site, scenario?: Scenario) {
     analysisTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const time = scenario?.epoch === "live" ? Math.floor(state.time / HOUR) * HOUR : state.time;
@@ -314,6 +321,7 @@ export default function App() {
     activeScenario?.durationDays,
     state.epochVersion,
     terrain?.elevationM,
+    state.loading[key],
     !!state.travel,
     state.welcome,
     solar,
@@ -562,9 +570,11 @@ export default function App() {
     const id = add(candidate.id);
     if (!id) { current.message("Four plans are open. Remove one to compare this site."); return; }
     if (center && scenarios.length < 4) add(asSite(center, center.name).id);
+    const candidateTerrain = { ...point.terrain, siteId: candidate.id };
     current.set({
       custom, scenarios, activeScenarioId: id, compare: true, rail: null, timeline: false,
-      terrains: { ...current.terrains, [candidate.id]: { ...point.terrain, siteId: candidate.id } },
+      ...(terrainCanReplace(current.terrains[candidate.id], candidateTerrain)
+        ? { terrains: { ...current.terrains, [candidate.id]: candidateTerrain } } : {}),
     });
     current.fly(candidate.id);
     setRanked(null);
@@ -1192,6 +1202,7 @@ export default function App() {
           </IconButton>
         )}
       </div>
+      {!phoneLayout && !solar && inspector && site && <InspectorResizeEdge />}
       {inspector && site && (
         <aside id="site-inspector" className="inspector" tabIndex={-1}>
           <header>
@@ -1219,10 +1230,24 @@ export default function App() {
               <SlidersHorizontal size={17} />
             </IconButton>
           </header>
+          {!solar && <button className="site-evaluation-summary" onClick={() => openSiteAnalysis(site, scoringPlan)}
+            aria-label="Evaluate landing site" aria-describedby="site-evaluation-date site-evaluation-percent">
+            <span>
+              <small>Landing date</small>
+              <time id="site-evaluation-date" dateTime={scoredDate}>{scoredDate.slice(0, 16).replace("T", " ")} UTC</time>
+              <small>{scoringPlan.durationDays} Earth {scoringPlan.durationDays === 1 ? "day" : "days"}</small>
+            </span>
+            <span>
+              <strong id="site-evaluation-percent">{missionScore ? formatSiteScore(missionScore.percent) : "—"}</strong>
+              <small>{!missionScore ? (analysis?.error || state.errors[key] ? "Score unavailable" : "Calculating") :
+                (!mask || (terrain?.quality && terrain.quality !== "full")) ? "Preliminary" : "Site score"}</small>
+            </span>
+          </button>}
           <div className="site-quick-actions">
-            <button onClick={() => openSiteAnalysis(site, activeScenario)}>Evaluate landing site</button>
             <button onClick={openComparison}><Columns2 size={16} /> Compare sites or dates</button>
-            <button onClick={() => openNearby(site)}>Find better spots nearby</button>
+            <button onPointerEnter={() => void loadNearbySites().catch(() => {})}
+              onFocus={() => void loadNearbySites().catch(() => {})}
+              onClick={() => openNearby(site)}>Find better spots nearby</button>
           </div>
           <div className="coordinates">
             <span>
@@ -1412,9 +1437,6 @@ export default function App() {
             )}
             {activeScenario && m ? (
               <>
-                {missionScore && <button className="full-width" onClick={() => openSiteAnalysis(site, activeScenario)}>
-                  Site score {formatSiteScore(missionScore.percent)}{(!mask || (terrain?.quality && terrain.quality !== "full")) && " · Preliminary"} <ArrowUpRight size={14} />
-                </button>}
                 {activeScenario.profile && (
                   <p className="mission-verdict">
                     {terrain?.quality === "preview" || terrain?.quality === "quick"
@@ -1782,7 +1804,7 @@ export default function App() {
           <ScenarioDialog key={plannerInitial?.requestId??"manual"} initial={plannerInitial} close={() => { setPlannerInitial(null); state.set({ scenarioDialog: false }); }} />
         </Suspense>
       )}
-      {nearby && <Suspense fallback={null}>
+      {nearby && <Suspense fallback={<div className="modal-backdrop"><p role="status">Opening nearby search…</p></div>}>
         <NearbySites {...nearby} sites={sites} close={() => {
           setNearby(null);
           requestAnimationFrame(() => nearbyTrigger.current?.focus());
