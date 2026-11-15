@@ -3,6 +3,7 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
 export const entryProgress=(previous,delta,distance)=>clamp(previous+delta/distance);
 export function cutsceneProgress(previous,deltaMs,assetsReady,mapReady,reduced=false){
   const next=clamp(previous+Math.max(0,deltaMs)/(reduced?220:4800));
+  if(reduced)return next;
   return Math.min(next,!assetsReady ? .08 : !mapReady ? .96 : 1);
 }
 // Deterministic staging poses, driven by the short entry cutscene's progress.

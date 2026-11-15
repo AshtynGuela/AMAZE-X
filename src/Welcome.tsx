@@ -49,7 +49,7 @@ export default function Welcome({ ready, begin, enter, skip, prepare }: Props) {
       root.style.setProperty("--welcome-progress", String(displayed));
       root.dataset.entryProgress=displayed.toFixed(4);
       flight.current.progress=displayed;flight.current.paint?.(displayed);
-      if (displayed >= .999 && latest.current.ready && !completed) {
+      if (displayed >= .999 && (latest.current.ready||reduced) && !completed) {
         completed = true;
         latest.current.enter();
         return;

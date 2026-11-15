@@ -23,4 +23,5 @@ test('one launch trigger advances automatically, holds for assets/map and finish
   progress=cutsceneProgress(progress,5000,true,false);assert.equal(progress,.96);
   assert.equal(cutsceneProgress(progress,500,true,true),1);
   assert.equal(cutsceneProgress(0,4800,true,true),1);
+  assert.equal(cutsceneProgress(0,220,false,false,true),1,'Reduced motion cannot wait for a 3D canvas');
 });
